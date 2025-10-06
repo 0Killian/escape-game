@@ -11,6 +11,7 @@
     button:hover { background: #0056b3; }
     .error { color: #ff4444; margin-top: 10px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -23,32 +24,33 @@
     <div class="error" id="errorMsg"></div>
   </div>
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="/assets/main.js"></script>
   <script>
     document.getElementById('createBtn').onclick = async () => {
       const pseudo = document.getElementById('pseudo').value.trim();
       if (!pseudo) return showError('Pseudo requis');
-      const res = await fetch('/api/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pseudo })
-      });
-      if (!res.ok) return showError('Erreur serveur');
-      const { code, playerId } = await res.json();
-      localStorage.setItem('playerId', playerId);
+
+      let code = await createRoom(pseudo);
+      if (code === null) return showError('Erreur serveur');
+
       localStorage.setItem('roomCode', code);
       localStorage.setItem('pseudo', pseudo);
-      window.location = `/room.html?code=${code}`;
+      localStorage.setItem('created', true);
+      window.location = '/room.html';
     };
+
     document.getElementById('joinBtn').onclick = async () => {
       const pseudo = document.getElementById('pseudo').value.trim();
       const code = document.getElementById('roomCode').value.trim().toUpperCase();
       if (!pseudo || !code) return showError('Pseudo et code requis');
-      const res = await fetch(`/api/rooms/${code}`);
-      if (!res.ok) return showError('Salle inexistante');
+
+
       localStorage.setItem('roomCode', code);
       localStorage.setItem('pseudo', pseudo);
-      window.location = `/room.html?code=${code}`;
+      localStorage.setItem('created', false);
+      window.location = '/room.html';
     };
+
     function showError(msg) {
       document.getElementById('errorMsg').textContent = msg;
     }

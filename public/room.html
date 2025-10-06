@@ -14,63 +14,87 @@
     button:hover { background: #b30000; }
     .error { color: #ff4444; margin-top: 10px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="code" id="roomCode"></div>
-    <div id="host"></div>
-    <div class="players" id="players"></div>
-    <div class="status" id="status"></div>
-    <button id="leaveBtn">Quitter</button>
-    <div class="error" id="errorMsg"></div>
-  </div>
-  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-  <script>
-    const socket = io();
-    const roomCode = new URLSearchParams(window.location.search).get('code') || localStorage.getItem('roomCode');
-    const pseudo = localStorage.getItem('pseudo');
-    const playerId = localStorage.getItem('playerId');
-    document.getElementById('roomCode').textContent = `Code salle : ${roomCode}`;
-    let isHost = false;
-    function showError(msg) {
-      document.getElementById('errorMsg').textContent = msg;
-    }
-    function updatePlayers(players) {
-      const list = players.map(p => `<li${p.isHost ? ' class="host"' : ''}>${p.pseudo}${p.isHost ? ' (Host)' : ''}${!p.connected ? ' [déconnecté]' : ''}</li>`).join('');
-      document.getElementById('players').innerHTML = `<ul>${list}</ul>`;
-      isHost = players.find(p => p.id === playerId)?.isHost;
-      document.getElementById('host').textContent = isHost ? 'Vous êtes l’hôte.' : '';
-      document.getElementById('status').textContent = players.length < 2 ? 'En attente de joueur...' : 'Salle complète.';
-    }
-    if (playerId) {
-      socket.emit('room:reconnect', { playerId, roomCode });
-    } else {
-      socket.emit('room:join', { code: roomCode, pseudo });
-    }
-    socket.on('room:joined', ({ room, players, self }) => {
-      localStorage.setItem('playerId', self.id);
-      updatePlayers(players);
-    });
-    socket.on('room:update', ({ players }) => {
-      updatePlayers(players);
-    });
-    socket.on('room:host-changed', ({ playerId: newHostId }) => {
-      if (newHostId === playerId) document.getElementById('host').textContent = 'Vous êtes l’hôte.';
-    });
-    socket.on('room:full', () => {
-      showError('Salle pleine');
-    });
-    socket.on('room:not-found', () => {
-      showError('Salle inexistante');
-    });
-    socket.on('room:reconnected', () => {
-      // rien à faire, la liste sera broadcast
-    });
-    document.getElementById('leaveBtn').onclick = () => {
-      socket.emit('room:leave');
-      localStorage.removeItem('playerId');
-      window.location = '/form.html';
-    };
-  </script>
-</body>
+    <div class="container">
+      <div class="code" id="roomCode"></div>
+      <div id="host"></div>
+      <div class="players" id="players"></div>
+      <div class="status" id="status"></div>
+      <button id="leaveBtn">Quitter</button>
+      <div class="error" id="errorMsg"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="/assets/main.js"></script>
+    <script>
+    (async () => {
+      function showError(msg) {
+        document.getElementById('errorMsg').textContent = msg;
+      }
+
+      const roomCode = localStorage.getItem('roomCode');
+      const pseudo = localStorage.getItem('pseudo');
+      const created = localStorage.getItem('created');
+
+      function onConnected(gameServer) {
+        const list = gameServer.state.room.players.map(p => `<li${p.isHost ? ' class="host"' : ''}>${p.pseudo}${p.isHost ? ' (Hôte)' : ''}${!p.connected ? ' [déconnecté]' : ''}</li>`).join('');
+        document.getElementById('players').innerHTML = `<ul>${list}</ul>`;
+
+        document.getElementById('status').textContent = gameServer.state.room.players.length < 2 ? 'En attente de joueur...' : 'Salle complète.';
+
+        document.getElementById('roomCode').textContent = `Code salle : ${roomCode}`;
+
+        document.getElementById('leaveBtn').onclick = () => {
+          gameServer.leave();
+          localStorage.removeItem('playerId');
+          window.location = '/form.html';
+        };
+      }
+
+      const listeners = {
+        onJoined: (player) => {
+          const list = gameServer.state.room.players.map(p => `<li${p.isHost ? ' class="host"' : ''}>${p.pseudo}${p.isHost ? ' (Hôte)' : ''}${!p.connected ? ' [déconnecté]' : ''}</li>`).join('');
+          document.getElementById('players').innerHTML = `<ul>${list}</ul>`;
+
+          document.getElementById('status').textContent = gameServer.state.room.players.length < 2 ? 'En attente de joueur...' : 'Salle complète.';
+        },
+        onHostChanged: (player) => {
+          const list = gameServer.state.room.players.map(p => `<li${p.isHost ? ' class="host"' : ''}>${p.pseudo}${p.isHost ? ' (Hôte)' : ''}${!p.connected ? ' [déconnecté]' : ''}</li>`).join('');
+          document.getElementById('players').innerHTML = `<ul>${list}</ul>`;
+
+          isHost = gameServer.state.self.isHost;
+          document.getElementById('host').textContent = isHost ? 'Vous êtes l’hôte.' : '';
+        },
+        onError: (error) => {
+          switch (error) {
+            case 'room:full':
+              showError('Salle pleine');
+              break;
+            case 'room:not-found': 
+              showError('Salle inexistante');
+              break;
+            case 'room:already-connected': 
+              showError('Vous êtes déjà connecté à cette salle.');
+              break;
+          }
+        },
+        onConnected
+      };
+
+
+      let playerId = localStorage.getItem('playerId');
+      if (playerId === null) {
+        listeners.onConnected = (gameServer) => {
+          playerId = gameServer.state.self.id;
+          localStorage.setItem('playerId', playerId);
+          onConnected(gameServer);
+        }
+        await joinRoom(pseudo, roomCode, created, listeners);
+      } else {
+        await reconnect(playerId, roomCode, listeners);
+      }
+    })();
+    </script>
+  </body>
 </html>
