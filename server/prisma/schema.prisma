@@ -14,11 +14,12 @@ model Room {
   players      Player[]
 }
 model Player {
-  id         String   @id @default(uuid())
-  room       Room?    @relation(fields: [roomId], references: [id])
-  roomId     String?
-  pseudo     String
-  isHost     Boolean  @default(false)
-  lastSeenAt DateTime @default(now())
-  connected  Boolean  @default(true)
+  id           String   @id @default(uuid())
+  room         Room?    @relation(fields: [roomId], references: [id])
+  roomId       String?
+  pseudo       String
+  isHost       Boolean  @default(false)
+  lastSeenAt   DateTime @default(now())
+  connected    Boolean  @default(true)
+  currentScene String
 }
