@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Room {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  hostPlayerId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  players      Player[]
+}
+model Player {
+  id         String   @id @default(uuid())
+  room       Room?    @relation(fields: [roomId], references: [id])
+  roomId     String?
+  pseudo     String
+  isHost     Boolean  @default(false)
+  lastSeenAt DateTime @default(now())
+  connected  Boolean  @default(true)
+}
