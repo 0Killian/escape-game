@@ -1,23 +1,36 @@
-class Example extends Phaser.Scene
-{
-  preload () {
-    this.load.setBaseURL('https://labs.phaser.io');
+/**
+ * @fileoverview Client-side game logic and Socket.IO connection management for the escape game.
+ */
 
-    this.load.image('sky', 'assets/skies/space3.png');
-    this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-    this.load.image('red', 'assets/particles/red.png');
+/**
+ * Example Phaser scene demonstrating basic game setup.
+ * @extends Phaser.Scene
+ */
+class Example extends Phaser.Scene {
+  /**
+   * Preloads game assets from external source.
+   */
+  preload() {
+    this.load.setBaseURL("https://labs.phaser.io");
+
+    this.load.image("sky", "assets/skies/space3.png");
+    this.load.image("logo", "assets/sprites/phaser3-logo.png");
+    this.load.image("red", "assets/particles/red.png");
   }
 
-  create () {
-    this.add.image(400, 300, 'sky');
+  /**
+   * Creates the game scene with physics objects and particle effects.
+   */
+  create() {
+    this.add.image(400, 300, "sky");
 
-    const particles = this.add.particles(0, 0, 'red', {
+    const particles = this.add.particles(0, 0, "red", {
       speed: 100,
       scale: { start: 1, end: 0 },
-      blendMode: 'ADD'
+      blendMode: "ADD",
     });
 
-    const logo = this.physics.add.image(400, 100, 'logo');
+    const logo = this.physics.add.image(400, 100, "logo");
 
     logo.setVelocity(100, 200);
     logo.setBounce(1, 1);
@@ -27,104 +40,150 @@ class Example extends Phaser.Scene
   }
 }
 
+/**
+ * Phaser game configuration object.
+ * @type {Phaser.Types.Core.GameConfig}
+ */
 const config = {
   type: Phaser.AUTO,
   width: "100%",
   height: "100%",
   scene: Example,
   physics: {
-    default: 'arcade',
+    default: "arcade",
     arcade: {
-      gravity: { y: 200 }
-    }
-  }
+      gravity: { y: 200 },
+    },
+  },
 };
 
-function createSocket(gameServer, listeners) {
-  gameServer.socket = io();
+/**
+ * @typedef {Object} GameServer
+ * @property {Object} socket - Socket.IO client instance
+ * @property {Object} state - Game state object
+ * @property {Object} state.room - Current room data
+ * @property {Array} state.room.players - Array of players in the room
+ * @property {Object} state.self - Current player data
+ * @property {Function} leave - Function to leave the current room
+ */
 
-  gameServer.socket.on('room:new-player', ({ player }) => {
-    gameServer.state.room.players = gameServer.state.room.players.filter(p => p.id !== player.id);
-    gameServer.state.room.players.push(player);
+/**
+ * @typedef {Object} SocketListeners
+ * @property {Function} [onJoined] - Called when a new player joins
+ * @property {Function} [onDisconnected] - Called when a player disconnects
+ * @property {Function} [onPlayerLeft] - Called when a player leaves
+ * @property {Function} [onHostChanged] - Called when the host changes
+ * @property {Function} [onConnected] - Called when successfully connected to a room
+ * @property {Function} [onReconnected] - Called when a player reconnects
+ * @property {Function} [onError] - Called when an error occurs
+ */
+
+/**
+ * Creates and configures a Socket.IO connection with event listeners.
+ * @param {GameServer} server - The game server object to attach the socket to
+ * @param {SocketListeners} listeners - Object containing event listener callbacks
+ */
+function createSocket(server, listeners) {
+  server.socket = io();
+
+  server.socket.on("room:new-player", ({ player }) => {
+    server.state.room.players = server.state.room.players.filter(
+      (p) => p.id !== player.id,
+    );
+    server.state.room.players.push(player);
     console.log("onJoined");
     if (listeners.onJoined) {
-      listeners.onJoined(player);
+      listeners.onJoined(server, player);
     }
   });
 
-  gameServer.socket.on('room:player-disconnected', ({ player }) => {
-    gameServer.state.room.players = gameServer.state.room.players.filter(p => p.id !== player.id);
-    gameServer.state.room.players.push(player);
+  server.socket.on("room:player-disconnected", ({ player }) => {
+    server.state.room.players = server.state.room.players.filter(
+      (p) => p.id !== player.id,
+    );
+    server.state.room.players.push(player);
     console.log("onDisconnected");
     if (listeners.onDisconnected) {
-      listeners.onDisconnected(player);
+      listeners.onDisconnected(server, player);
     }
   });
 
-  gameServer.socket.on('room:player-left', ({ player }) => {
-    gameServer.state.room.players = gameServer.state.room.players.filter(p => p.id !== player.id);
+  server.socket.on("room:player-left", ({ player }) => {
+    server.state.room.players = server.state.room.players.filter(
+      (p) => p.id !== player.id,
+    );
     console.log("onPlayerLeft");
     if (listeners.onPlayerLeft) {
-      listeners.onPlayerLeft(player);
+      listeners.onPlayerLeft(server, player);
     }
   });
 
-  gameServer.socket.on('room:host-changed', ({ player }) => {
+  server.socket.on("room:host-changed", ({ player }) => {
     console.log("onHostChanged");
     if (listeners.onHostChanged) {
-      listeners.onHostChanged(player);
+      listeners.onHostChanged(server, player);
     }
-  })
+  });
 
-  gameServer.socket.on('room:joined', ({ room, self }) => {
-    gameServer.state.room = room;
-    gameServer.state.self = self;
+  server.socket.on("room:joined", ({ room, self }) => {
+    server.state.room = room;
+    server.state.self = self;
     console.log("onConnected");
     if (listeners.onConnected) {
-      listeners.onConnected(gameServer);
+      listeners.onConnected(server);
     }
   });
 
-  gameServer.socket.on('room:reconnected', (player) => {
+  server.socket.on("room:reconnected", (player) => {
     console.log("onReconnected");
     if (listeners.onReconnected) {
-      listeners.onReconnected(player);
+      listeners.onReconnected(server, player);
     }
   });
 
-  let errors = ['room:full', 'room:already-connected', 'room:not-found'];
+  let errors = ["room:full", "room:already-connected", "room:not-found"];
   for (let error of errors) {
-    gameServer.socket.on(error, () => {
+    server.socket.on(error, () => {
       console.log("onError");
       if (listeners.onError) {
-        listeners.onError(error);
+        listeners.onError(server, error);
       }
     });
   }
 }
 
+/**
+ * Creates a game server object with Socket.IO connection.
+ * @param {SocketListeners} listeners - Object containing event listener callbacks
+ * @returns {GameServer} The game server object
+ */
 function createGameServer(listeners) {
   let gameServer = {
     state: {},
   };
 
   gameServer.leave = () => {
-    gameServer.socket.emit('room:leave');
+    gameServer.socket.emit("room:leave");
   };
 
   createSocket(gameServer, listeners);
   return gameServer;
 }
 
+/**
+ * Creates a new game room on the server.
+ * @param {string} pseudo - The player's username
+ * @returns {Promise<string|null>} The room code if successful, null otherwise
+ */
 async function createRoom(pseudo) {
   let response = await fetch("/api/rooms", {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({
-      pseudo
+      pseudo,
     }),
     headers: {
-      'Content-Type': 'application/json'
-    }
+      "Content-Type": "application/json",
+    },
   });
 
   if (!response.ok) {
@@ -137,25 +196,23 @@ async function createRoom(pseudo) {
   return code;
 }
 
-async function joinRoom(pseudo, code, created, listeners) {
+/**
+ * Joins an existing game room.
+ * @param {string} pseudo - The player's username
+ * @param {string} code - The room code to join
+ * @param {SocketListeners} listeners - Object containing event listener callbacks
+ * @returns {Promise<void>}
+ */
+async function joinRoom(pseudo, code, listeners) {
   let gameServer = createGameServer(listeners);
 
-  if (created) {
-    gameServer.socket.emit('room:create', { code });
-  } else {
-    gameServer.socket.emit('room:join', { code, pseudo });
-  }
+  gameServer.socket.emit("room:join", { code, pseudo });
 }
 
-async function reconnect(playerId, roomCode, listeners) {
-  let gameServer = createGameServer(listeners);
-
-  gameServer.socket.emit('room:reconnect', { playerId, roomCode });
-
-  return gameServer;
-}
-
+/**
+ * Starts the Phaser game instance.
+ * @param {GameServer} gameServer - The game server object
+ */
 function startGame(gameServer) {
   const game = new Phaser.Game(config);
 }
-
