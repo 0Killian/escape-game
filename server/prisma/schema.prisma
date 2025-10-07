@@ -14,6 +14,7 @@ model Room {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   players      Player[]
+  messages     Message[]
   timer        Int      @default(2700) // 45 minutes in seconds
   Enigma1      Enigma1?
   Enigma2      Enigma2?
@@ -30,6 +31,17 @@ model Player {
   lastSeenAt   DateTime @default(now())
   connected    Boolean  @default(true)
   currentScene String
+  messages     Message[]
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id])
+  roomId    String
+  author    Player   @relation(fields: [authorId], references: [id])
+  authorId  String
 }
 
 // ÉNIGME 1 : Le Storyboard Éclaté

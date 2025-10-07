@@ -78,8 +78,26 @@ export default {
       res.json({ ok: true });
     });
 
+    // Get message history for a room
+    app.get("/api/rooms/:code/messages", async (req, res) => {
+      const { code } = req.params;
+      const room = await prisma.room.findUnique({ where: { code } });
+      if (!room) return res.status(404).json({ error: "Salle inexistante" });
+      const messages = await prisma.message.findMany({
+        where: { roomId: room.id },
+        orderBy: { createdAt: "asc" },
+        include: { author: true },
+      });
+      res.json(messages.map(m => ({
+        id: m.id,
+        text: m.text,
+        createdAt: m.createdAt,
+        author: { id: m.author.id, pseudo: m.author.pseudo }
+      })));
+    });
+
     // Socket connection
-    io.on("connection", (socket) => {
+  io.on("connection", (socket) => {
       /** @type {SocketState} */
       let state = {
         room: null,
@@ -87,6 +105,30 @@ export default {
         playerDeletionTimers: [],
         roomDeletionTimers: [],
       };
+
+      // Chat: send message
+      socket.on("chat:send-message", async ({ roomCode, authorId, text }, cb) => {
+        if (!roomCode || !authorId || typeof text !== "string") return;
+        if (text.trim().length === 0 || text.length > 500) return;
+        const room = await prisma.room.findUnique({ where: { code: roomCode } });
+        const author = await prisma.player.findUnique({ where: { id: authorId } });
+        if (!room || !author) return;
+        const message = await prisma.message.create({
+          data: {
+            text: text.slice(0, 500),
+            room: { connect: { id: room.id } },
+            author: { connect: { id: author.id } },
+          },
+          include: { author: true },
+        });
+        io.to(room.code).emit("chat:new-message", {
+          id: message.id,
+          text: message.text,
+          createdAt: message.createdAt,
+          author: { id: message.author.id, pseudo: message.author.pseudo }
+        });
+        if (cb) cb({ ok: true });
+      });
 
       // A player joins a room
       socket.on(
