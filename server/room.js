@@ -88,16 +88,18 @@ export default {
         orderBy: { createdAt: "asc" },
         include: { author: true },
       });
-      res.json(messages.map(m => ({
-        id: m.id,
-        text: m.text,
-        createdAt: m.createdAt,
-        author: { id: m.author.id, pseudo: m.author.pseudo }
-      })));
+      res.json(
+        messages.map((m) => ({
+          id: m.id,
+          text: m.text,
+          createdAt: m.createdAt,
+          author: { id: m.author.id, pseudo: m.author.pseudo },
+        })),
+      );
     });
 
     // Socket connection
-  io.on("connection", (socket) => {
+    io.on("connection", (socket) => {
       /** @type {SocketState} */
       let state = {
         room: null,
@@ -107,12 +109,17 @@ export default {
       };
 
       // Chat: send message
-      socket.on("chat:send-message", async ({ roomCode, authorId, text }, cb) => {
-        if (!roomCode || !authorId || typeof text !== "string") return;
+      socket.on("chat:send-message", async ({ text }) => {
         if (text.trim().length === 0 || text.length > 500) return;
-        const room = await prisma.room.findUnique({ where: { code: roomCode } });
-        const author = await prisma.player.findUnique({ where: { id: authorId } });
-        if (!room || !author) return;
+
+        const room = await prisma.room.findUnique({
+          where: { id: state.room },
+        });
+
+        const author = await prisma.player.findUnique({
+          where: { id: state.player },
+        });
+
         const message = await prisma.message.create({
           data: {
             text: text.slice(0, 500),
@@ -121,13 +128,13 @@ export default {
           },
           include: { author: true },
         });
+
         io.to(room.code).emit("chat:new-message", {
           id: message.id,
           text: message.text,
           createdAt: message.createdAt,
-          author: { id: message.author.id, pseudo: message.author.pseudo }
+          author: { id: message.author.id, pseudo: message.author.pseudo },
         });
-        if (cb) cb({ ok: true });
       });
 
       // A player joins a room

@@ -90,12 +90,10 @@ function createSocket(server, listeners) {
   });
 
   server.socket.on("room:host-changed", ({ playerId }) => {
-    if (server.state.room && Array.isArray(server.state.room.players)) {
-      server.state.room.players = server.state.room.players.map(p => ({
-        ...p,
-        isHost: p.id === playerId,
-      }));
-    }
+    server.state.room.players = server.state.room.players.map((p) => ({
+      ...p,
+      isHost: p.id === playerId,
+    }));
     if (listeners.onHostChanged) {
       listeners.onHostChanged(server, playerId);
     }
@@ -112,71 +110,44 @@ function createSocket(server, listeners) {
       (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
-    console.log("onReconnected");
     if (listeners.onReconnected) {
       listeners.onReconnected(server, player);
     }
   });
 
   server.socket.on("game:started", () => {
-    console.log("onGameStarted");
     if (listeners.onGameStarted) {
       listeners.onGameStarted(server);
     }
   });
 
   server.socket.on("game:scene-changed", ({ scene }) => {
-    console.log("onSceneChanged");
     if (listeners.onSceneChanged) {
       listeners.onSceneChanged(server, scene);
     }
   });
 
   server.socket.on("game:update", ({ scene }) => {
-    console.log("onGameUpdate");
     if (listeners.onGameUpdate) {
       listeners.onGameUpdate(server, scene);
     }
   });
 
-  // Normalisation des codes d'erreurs potentiels entre différentes versions serveur
   const rawErrors = [
     "error:full",
-    "errors:full", // variante utilisée côté serveur actuel
     "error:not-found",
     "error:not-authorized",
     "error:invalid-scene-change",
-    "room:full", // ancien nommage
-    "room:not-found"
   ];
 
   for (let code of rawErrors) {
     server.socket.on(code, () => {
-      if (!listeners.onError) return;
-      // Mapping vers un ensemble cohérent
-      let normalized;
-      switch (code) {
-        case "errors:full":
-        case "error:full":
-        case "room:full":
-          normalized = "room:full"; break;
-        case "error:not-found":
-        case "room:not-found":
-          normalized = "room:not-found"; break;
-        case "error:not-authorized":
-          normalized = "room:not-authorized"; break;
-        case "error:invalid-scene-change":
-          normalized = "room:invalid-scene-change"; break;
-        default:
-          normalized = code;
-      }
-      listeners.onError(server, normalized);
+      if (listeners.onError) listeners.onError(server, code);
     });
   }
 
-  // --- Messagerie instantanée ---
-  server.socket.on("chat:new-message", (msg) => {
-    if (server.onNewMessage) server.onNewMessage(msg);
+  server.socket.on("chat:new-message", ({ msg }) => {
+    if (listeners.onNewMessage) listeners.onNewMessage(server, msg);
   });
 }
 
@@ -199,8 +170,6 @@ async function fetchRoomMessages(roomCode) {
 function sendMessage(server, text) {
   if (!server.state || !server.state.room || !server.state.self) return;
   server.socket.emit("chat:send-message", {
-    roomCode: server.state.room.code,
-    authorId: server.state.self.id,
     text: text.slice(0, 500),
   });
 }
@@ -211,14 +180,13 @@ function sendMessage(server, text) {
  * @returns {GameServer} The game server object
  */
 function createGameServer(listeners) {
-  // Objet serveur de jeu
+  /** @type {GameServer} */
   let gameServer = {
     state: {
       room: null,
       self: null,
     },
     socket: null,
-    onNewMessage: null,
 
     start() {
       gameServer.socket.emit("game:start");
@@ -271,7 +239,6 @@ async function createRoom(pseudo) {
 async function joinRoom(pseudo, code, listeners) {
   const gs = createGameServer(listeners);
   gs.socket.emit("room:join", { code, pseudo });
-  return gs;
 }
 
 /**

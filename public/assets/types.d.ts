@@ -13,6 +13,9 @@ declare global {
    * Room object storing the state of the game.
    */
   interface Room {
+    /** Unique code for the room */
+    code: string;
+
     /** Number of seconds remaining */
     timer: number;
 
@@ -110,6 +113,9 @@ declare global {
 
     /** Called when the server updates the game state */
     onGameUpdate?(server: GameServer, scene: string): void;
+
+    /** Called when another player sends a message */
+    onNewMessage?(server: GameServer, message: string): void;
   }
 
   // Global functions

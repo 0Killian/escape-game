@@ -1,3 +1,38 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const containerWidth = 600;
+  const perforationWidth = 12;
+  const perforationSpacing = 8;
+  const sidePadding = 8;
+  const availableWidth = containerWidth - 2 * sidePadding;
+  const perforationsCount = Math.floor(
+    availableWidth / (perforationWidth + perforationSpacing),
+  );
+  const topPerforations = document.getElementById("top-perforations");
+  const bottomPerforations = document.getElementById("bottom-perforations");
+
+  /**
+   * Creates perforations in the specified container.
+   *
+   * @param {HTMLElement} container
+   * @param {number} count
+   */
+  function createPerforations(container, count) {
+    if (!container) return;
+    for (let i = 0; i < count; i++) {
+      const perforation = document.createElement("div");
+      perforation.className =
+        "perforation bg-white rounded-sm mt-1.5 w-[12px] h-2";
+      container.appendChild(perforation);
+    }
+  }
+
+  createPerforations(topPerforations, perforationsCount);
+  createPerforations(bottomPerforations, perforationsCount);
+});
+
+let chatOpen = false;
+let chatMessagesList = [];
+
 /**
  * Displays the error message to the user.
  *
@@ -10,48 +45,124 @@ function showError(msg) {
 const roomCode = localStorage.getItem("roomCode");
 const pseudo = localStorage.getItem("pseudo");
 
+if (!roomCode || !pseudo) {
+  window.location.href = "/";
+}
+
 /**
- * Updates the player list in the UI.
+ * Binds the chat UI to the game server
  *
  * @param {GameServer} server
  */
-function updatePlayerList(server) {
-  const list = server.state.room.players
+function bindChatUI(server) {
+  const chatBtn = document.getElementById("chatBtn");
+  const closeChat = document.getElementById("closeChat");
+  const chatForm = document.getElementById("chatForm");
+  const chatModal = document.getElementById("chatModal");
+  const chatInput = document.getElementById("chatInput");
+
+  if (chatBtn)
+    chatBtn.onclick = async () => {
+      if (chatModal) chatModal.style.display = "flex";
+      chatOpen = true;
+      showChatNotif(false);
+      if (server && server.state && server.state.room) {
+        chatMessagesList = await fetchRoomMessages(server.state.room.code);
+        renderMessages(chatMessagesList);
+      }
+    };
+  if (closeChat)
+    closeChat.onclick = () => {
+      if (chatModal) chatModal.style.display = "none";
+      chatOpen = false;
+    };
+  if (chatForm)
+    chatForm.onsubmit = (e) => {
+      e.preventDefault();
+      if (!chatInput) return;
+      const inputEl = /** @type {HTMLInputElement} */ (chatInput);
+      const text = inputEl.value.trim();
+      if (!text) return;
+      sendMessage(server, text);
+      inputEl.value = "";
+    };
+}
+
+/**
+ * Renders the list of players in the UI.
+ *
+ * @param {Player[]} players
+ */
+function renderPlayers(players) {
+  const list = players
     .map(
       (p) =>
         `<li${p.isHost ? ' class="host"' : ""}>${p.pseudo}${p.isHost ? " (Hôte)" : ""}${!p.connected ? " [déconnecté]" : ""}</li>`,
     )
     .join("");
-  document.getElementById("players").innerHTML = `<ul>${list}</ul>`;
 
+  const ul = document.getElementById("players-list");
+  if (ul) ul.innerHTML = list;
+}
+
+/**
+ * Updates the status message in the UI.
+ *
+ * @param {GameServer} server
+ */
+function updateStatus(server) {
+  const status = document.getElementById("status");
+  if (!status) return;
   if (server.state.room.players.length < 2) {
-    document.getElementById("status").textContent = "En attente de joueur...";
+    status.textContent = "En attente de joueur...";
     document.getElementById("startBtn").setAttribute("disabled", "true");
   } else {
-    document.getElementById("status").textContent = "Prêt à commencer...";
+    status.textContent = "Salle complète.";
     document.getElementById("startBtn").removeAttribute("disabled");
   }
 }
 
 /** @type {SocketListeners} */
 const listeners = {
-  onReconnected: updatePlayerList,
-  onDisconnected: updatePlayerList,
-  onJoined: updatePlayerList,
-  onPlayerLeft: updatePlayerList,
-  onHostChanged: updatePlayerList,
-  onError: (server, error) => {
+  onJoined: (server) => {
+    renderPlayers(server.state.room.players);
+    updateStatus(server);
+  },
+  onPlayerLeft: (server) => {
+    renderPlayers(server.state.room.players);
+    updateStatus(server);
+  },
+  onHostChanged: (server) => {
+    renderPlayers(server.state.room.players);
+  },
+  onReconnected: (server) => {
+    renderPlayers(server.state.room.players);
+    updateStatus(server);
+  },
+  onDisconnected: (server) => {
+    renderPlayers(server.state.room.players);
+    updateStatus(server);
+  },
+  onNewMessage: (_server, msg) => {
+    chatMessagesList.push(msg);
+    if (chatOpen) {
+      renderMessages(chatMessagesList);
+    } else {
+      showChatNotif(true);
+    }
+  },
+  onError: (_server, error) => {
     switch (error) {
-      case "room:full":
+      case "error:full":
         showError("Salle pleine");
         break;
-      case "room:not-found":
+      case "error:not-found":
         showError("Salle inexistante");
         break;
-      case "room:not-authorized":
+      case "error:not-authorized":
         showError("Vous n’êtes pas autorisé à rejoindre cette salle");
         break;
-      case "room:invalid-scene-change":
+      case "error:invalid-scene-change":
         showError(
           "Vous ne pouvez pas aller dans cette salle depuis votre position actuelle",
         );
@@ -62,27 +173,12 @@ const listeners = {
         break;
     }
   },
-  /**
-   * Called when the client is connected to the server.
-   *
-   * @param {GameServer} server - The server instance.
-   */
   onConnected: (server) => {
-    const list = server.state.room.players
-      .map(
-        (p) =>
-          `<li${p.isHost ? ' class="host"' : ""}>${p.pseudo}${p.isHost ? " (Hôte)" : ""}${!p.connected ? " [déconnecté]" : ""}</li>`,
-      )
-      .join("");
-    document.getElementById("players").innerHTML = `<ul>${list}</ul>`;
+    bindChatUI(server);
+    renderPlayers(server.state.room.players);
+    updateStatus(server);
 
-    document.getElementById("status").textContent =
-      server.state.room.players.length < 2
-        ? "En attente de joueur..."
-        : "Salle complète.";
-
-    document.getElementById("roomCode").textContent =
-      `Code salle : ${roomCode}`;
+    document.getElementById("code-display").textContent = roomCode;
 
     document.getElementById("leaveBtn").onclick = () => {
       server.leave();
@@ -102,6 +198,32 @@ const listeners = {
     console.log(server.state.room);
   },
 };
+
+function renderMessages(messages) {
+  const chatMessages = document.getElementById("chatMessages");
+  if (!chatMessages) return;
+  chatMessages.innerHTML = messages
+    .map(
+      (m) => `
+    <div class="mb-3 text-white">
+      <span style="font-weight:bold;color:#7cf;">${m.author.pseudo}</span>
+      <span style="color:#aaa;font-size:0.9em;margin-left:6px;">${new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span><br/>
+      <span style="word-break:break-word;">${m.text.replace(/</g, "&lt;")}</span>
+    </div>`,
+    )
+    .join("");
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Sets the visibility of the chat notification
+ *
+ * @param {boolean} show
+ */
+function showChatNotif(show) {
+  const notif = document.getElementById("chatNotif");
+  if (notif) notif.style.display = show ? "block" : "none";
+}
 
 (async () => {
   await joinRoom(pseudo, roomCode, listeners);
