@@ -52,31 +52,10 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 200 },
+      gravity: { x: 0, y: 200 },
     },
   },
 };
-
-/**
- * @typedef {Object} GameServer
- * @property {Object} socket - Socket.IO client instance
- * @property {Object} state - Game state object
- * @property {Object} state.room - Current room data
- * @property {Array} state.room.players - Array of players in the room
- * @property {Object} state.self - Current player data
- * @property {Function} leave - Function to leave the current room
- */
-
-/**
- * @typedef {Object} SocketListeners
- * @property {Function} [onJoined] - Called when a new player joins
- * @property {Function} [onDisconnected] - Called when a player disconnects
- * @property {Function} [onPlayerLeft] - Called when a player leaves
- * @property {Function} [onHostChanged] - Called when the host changes
- * @property {Function} [onConnected] - Called when successfully connected to a room
- * @property {Function} [onReconnected] - Called when a player reconnects
- * @property {Function} [onError] - Called when an error occurs
- */
 
 /**
  * Creates and configures a Socket.IO connection with event listeners.
@@ -158,12 +137,16 @@ function createSocket(server, listeners) {
  * @returns {GameServer} The game server object
  */
 function createGameServer(listeners) {
+  /** @type {GameServer} */
   let gameServer = {
-    state: {},
-  };
-
-  gameServer.leave = () => {
-    gameServer.socket.emit("room:leave");
+    state: {
+      room: null,
+      self: null,
+    },
+    socket: null,
+    leave: () => {
+      gameServer.socket.emit("room:leave");
+    },
   };
 
   createSocket(gameServer, listeners);

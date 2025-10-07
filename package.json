@@ -1,0 +1,33 @@
+{
+  "name": "escape-game",
+  "version": "1.0.0",
+  "description": "Multiplayer escape game using Phaser 3 and Socket.IO",
+  "main": "public/index.html",
+  "scripts": {
+    "dev": "cd server && npm run dev"
+  },
+  "keywords": [
+    "phaser",
+    "game",
+    "escape-room",
+    "multiplayer",
+    "socketio"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/socket.io-client": "^1.4.36",
+    "http-server": "^14.1.1",
+    "phaser": "^3.60.0",
+    "socket.io-client": "^4.7.4",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

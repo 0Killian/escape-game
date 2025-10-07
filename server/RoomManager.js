@@ -35,11 +35,26 @@ export default {
   registerRoutes: (logger, prisma, app, io) => {
     // Create a room
     app.post("/api/rooms", async (req, res) => {
-      const { pseudo } = req.body;
       const code = generateRoomCode();
 
       const room = await prisma.room.create({
         data: { code },
+      });
+
+      await prisma.enigma1.create({
+        data: { roomId: room.id, storyboards: [] },
+      });
+
+      await prisma.enigma2.create({
+        data: { roomId: room.id, photos: [] },
+      });
+
+      await prisma.enigma3.create({
+        data: { roomId: room.id, roles: [] },
+      });
+
+      await prisma.enigma4.create({
+        data: { roomId: room.id, ambiance: null },
       });
 
       logger.info(`Room ${code} created`);
@@ -72,7 +87,13 @@ export default {
           logger.info(`Player ${pseudo} tries to join room ${code}`);
           let room = await prisma.room.findUnique({
             where: { code },
-            include: { players: true },
+            include: {
+              players: true,
+              Enigma1: true,
+              Enigma2: true,
+              Enigma3: true,
+              Enigma4: true,
+            },
           });
 
           if (!room) return socket.emit("room:not-found");
@@ -111,13 +132,25 @@ export default {
               data: {
                 hostPlayerId: player.id,
               },
-              include: { players: true },
+              include: {
+                players: true,
+                Enigma1: true,
+                Enigma2: true,
+                Enigma3: true,
+                Enigma4: true,
+              },
             });
           }
 
           room = await prisma.room.findUnique({
             where: { code },
-            include: { players: true },
+            include: {
+              players: true,
+              Enigma1: true,
+              Enigma2: true,
+              Enigma3: true,
+              Enigma4: true,
+            },
           });
 
           if (reconnected) {
@@ -187,7 +220,13 @@ export default {
 
         const room = await prisma.room.findUnique({
           where: { code: roomCode },
-          include: { players: true },
+          include: {
+            players: true,
+            Enigma1: true,
+            Enigma2: true,
+            Enigma3: true,
+            Enigma4: true,
+          },
         });
 
         // Si le joueur qui part est host, transférer avant suppression
@@ -214,14 +253,27 @@ export default {
         // Recharge la room après suppression
         const updatedRoom = await prisma.room.findUnique({
           where: { code: roomCode },
-          include: { players: true },
+          include: {
+            players: true,
+            Enigma1: true,
+            Enigma2: true,
+            Enigma3: true,
+            Enigma4: true,
+          },
         });
         io.to(roomCode).emit("room:player-left", { player });
 
         // Suppression salle si vide
         if (updatedRoom && updatedRoom.players.length === 0) {
           roomTimers[roomCode] = setTimeout(async () => {
-            await prisma.room.delete({ where: { code: roomCode } });
+            const room = await prisma.room.findUnique({
+              where: { code: roomCode },
+            });
+            await prisma.enigma1.delete({ where: { id: room.id } });
+            await prisma.enigma2.delete({ where: { id: room.id } });
+            await prisma.enigma3.delete({ where: { id: room.id } });
+            await prisma.enigma4.delete({ where: { id: room.id } });
+            await prisma.room.delete({ where: { id: room.id } });
           }, 60000);
         }
       }
