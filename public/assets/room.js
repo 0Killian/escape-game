@@ -183,7 +183,7 @@ const listeners = {
     document.getElementById("leaveBtn").onclick = () => {
       server.leave();
       localStorage.removeItem("playerId");
-      window.location.assign("/form.html");
+      window.location.assign("/");
     };
 
     document.getElementById("startBtn").onclick = () => {
