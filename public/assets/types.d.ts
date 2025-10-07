@@ -1,5 +1,15 @@
 declare global {
   /**
+   * Message object representing a chat message.
+   */
+  interface Message {
+    id: string;
+    author: Player;
+    text: string;
+    createdAt: number;
+  }
+
+  /**
    * Player object representing a participant in the game.
    */
   interface Player {

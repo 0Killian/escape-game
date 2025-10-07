@@ -8,14 +8,14 @@ datasource db {
 }
 
 model Room {
-  id           String   @id @default(uuid())
-  code         String   @unique
+  id           String    @id @default(uuid())
+  code         String    @unique
   hostPlayerId String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   players      Player[]
   messages     Message[]
-  timer        Int      @default(2700) // 45 minutes in seconds
+  timer        Int       @default(2700) // 45 minutes in seconds
   Enigma1      Enigma1?
   Enigma2      Enigma2?
   Enigma3      Enigma3?
@@ -23,13 +23,13 @@ model Room {
 }
 
 model Player {
-  id           String   @id @default(uuid())
-  room         Room?    @relation(fields: [roomId], references: [id])
+  id           String    @id @default(uuid())
+  room         Room?     @relation(fields: [roomId], references: [id])
   roomId       String?
   pseudo       String
-  isHost       Boolean  @default(false)
-  lastSeenAt   DateTime @default(now())
-  connected    Boolean  @default(true)
+  isHost       Boolean   @default(false)
+  lastSeenAt   DateTime  @default(now())
+  connected    Boolean   @default(true)
   currentScene String
   messages     Message[]
 }
@@ -40,7 +40,7 @@ model Message {
   createdAt DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id])
   roomId    String
-  author    Player   @relation(fields: [authorId], references: [id])
+  author    Player   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
 }
 

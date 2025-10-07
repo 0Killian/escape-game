@@ -199,6 +199,12 @@ const listeners = {
   },
 };
 
+/**
+ * Renders messages in the chat
+ *
+ * @param {Message[]} messages
+ * @returns
+ */
 function renderMessages(messages) {
   const chatMessages = document.getElementById("chatMessages");
   if (!chatMessages) return;
@@ -213,6 +219,7 @@ function renderMessages(messages) {
     )
     .join("");
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  chatMessages.scrollTo({ top: chatMessages.scrollHeight });
 }
 
 /**

@@ -88,14 +88,7 @@ export default {
         orderBy: { createdAt: "asc" },
         include: { author: true },
       });
-      res.json(
-        messages.map((m) => ({
-          id: m.id,
-          text: m.text,
-          createdAt: m.createdAt,
-          author: { id: m.author.id, pseudo: m.author.pseudo },
-        })),
-      );
+      res.json(messages);
     });
 
     // Socket connection
@@ -129,12 +122,7 @@ export default {
           include: { author: true },
         });
 
-        io.to(room.code).emit("chat:new-message", {
-          id: message.id,
-          text: message.text,
-          createdAt: message.createdAt,
-          author: { id: message.author.id, pseudo: message.author.pseudo },
-        });
+        io.to(room.code).emit("chat:new-message", { message });
       });
 
       // A player joins a room
@@ -219,7 +207,7 @@ export default {
             io.to(room.code).emit("room:new-player", { player });
           }
 
-          state.room = room.code;
+          state.room = room.id;
           state.player = player.id;
 
           if (state.roomDeletionTimers[state.room]) {
@@ -272,17 +260,17 @@ export default {
        * Removes a player from a room and handles host transfer if necessary.
        * Deletes the room after 60 seconds if it becomes empty.
        * @param {string} playerId - The ID of the player to remove
-       * @param {string} roomCode - The room code
+       * @param {string} roomId - The room ID
        * @returns {Promise<void>}
        */
-      async function removePlayer(playerId, roomCode) {
+      async function removePlayer(playerId, roomId) {
         const player = await prisma.player.findUnique({
           where: { id: playerId },
         });
         if (!player) return;
 
-        const room = await prisma.room.findUnique({
-          where: { code: roomCode },
+        let room = await prisma.room.findUnique({
+          where: { id: roomId },
           include: {
             players: true,
             Enigma1: true,
@@ -315,7 +303,7 @@ export default {
 
         // Recharge la room après suppression
         const updatedRoom = await prisma.room.findUnique({
-          where: { code: roomCode },
+          where: { id: roomId },
           include: {
             players: true,
             Enigma1: true,
@@ -324,13 +312,20 @@ export default {
             Enigma4: true,
           },
         });
-        io.to(roomCode).emit("room:player-left", { player });
+        io.to(room.code).emit("room:player-left", { player });
 
         // Suppression salle si vide
         if (updatedRoom && updatedRoom.players.length === 0) {
-          state.roomDeletionTimers[roomCode] = setTimeout(async () => {
-            const room = await prisma.room.findUnique({
-              where: { code: roomCode },
+          state.roomDeletionTimers[room.code] = setTimeout(async () => {
+            room = await prisma.room.findUnique({
+              where: { id: room.id },
+              include: {
+                players: true,
+                Enigma1: true,
+                Enigma2: true,
+                Enigma3: true,
+                Enigma4: true,
+              },
             });
             await prisma.enigma1.delete({ where: { roomId: room.id } });
             await prisma.enigma2.delete({ where: { roomId: room.id } });

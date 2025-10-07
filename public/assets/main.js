@@ -146,8 +146,8 @@ function createSocket(server, listeners) {
     });
   }
 
-  server.socket.on("chat:new-message", ({ msg }) => {
-    if (listeners.onNewMessage) listeners.onNewMessage(server, msg);
+  server.socket.on("chat:new-message", ({ message }) => {
+    if (listeners.onNewMessage) listeners.onNewMessage(server, message);
   });
 }
 
