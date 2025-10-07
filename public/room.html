@@ -49,16 +49,19 @@
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     </head>
     <body>
-        <div class="container">
-            <div class="code" id="roomCode"></div>
-            <div id="host"></div>
-            <div class="players" id="players"></div>
-            <div class="status" id="status"></div>
-            <button id="leaveBtn">Quitter</button>
-            <div class="error" id="errorMsg"></div>
+        <div id="waiting-room">
+            <div class="container">
+                <div class="code" id="roomCode"></div>
+                <div id="host"></div>
+                <div class="players" id="players"></div>
+                <div class="status" id="status"></div>
+                <button id="leaveBtn">Quitter</button>
+                <div class="error" id="errorMsg"></div>
+                <button id="startBtn" disabled>Commencer</button>
+            </div>
+            <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+            <script src="/assets/main.js"></script>
+            <script src="/assets/room.js"></script>
         </div>
-        <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-        <script src="/assets/main.js"></script>
-        <script src="/assets/room.js"></script>
     </body>
 </html>

@@ -21,22 +21,33 @@ declare global {
 
     /** Enigma 1 state */
     enigma1: {
-      storyboards: Array<string>;
+      storyboards: Array<{
+        name: string;
+        position: {
+          x: number;
+          y: number;
+        };
+        index: number;
+      }>;
+      completed: boolean;
     };
 
     /** Enigma 2 state */
     enigma2: {
       photos: Array<string>;
+      completed: boolean;
     };
 
     /** Enigma 3 state */
     enigma3: {
       roles: Array<string>;
+      completed: boolean;
     };
 
     /** Enigma 4 state */
     enigma4: {
       ambiance?: string;
+      completed: boolean;
     };
   }
 
@@ -55,6 +66,12 @@ declare global {
       /** Current player data */
       self: Player;
     };
+
+    /** Function to start the game */
+    start(): void;
+
+    /** Function to request a scene change */
+    changeScene(scene: string): void;
 
     /** Function to leave the current room */
     leave(): void;
@@ -84,6 +101,15 @@ declare global {
 
     /** Called when an error occurs */
     onError?(server: GameServer, error: string): void;
+
+    /** Called when the game starts */
+    onGameStarted?(server: GameServer): void;
+
+    /** Called when the server requests a scene changes */
+    onSceneChanged?(server: GameServer, scene: string): void;
+
+    /** Called when the server updates the game state */
+    onGameUpdate?(server: GameServer, scene: string): void;
   }
 
   // Global functions

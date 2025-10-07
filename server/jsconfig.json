@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "allowJs": true,
+    "checkJs": true,
+    "maxNodeModuleJsDepth": 1,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitOverride": false,
+    "module": "ES2022",
+    "baseUrl": ".",
+    "paths": {
+      "#*": ["./*"]
+    }
+  },
+  "include": [
+    "**/*.js",
+    "**/*.mjs",
+    "prisma/schema.prisma"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "prisma/migrations"
+  ],
+  "typeAcquisition": {
+    "enable": true,
+    "include": [
+      "node",
+      "@types/node",
+      "express",
+      "socket.io",
+      "winston",
+      "@prisma/client"
+    ]
+  }
+}

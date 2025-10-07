@@ -7,6 +7,15 @@ import { PrismaClient } from "@prisma/client";
 import { Logger } from "winston";
 import express from "express";
 import { Server } from "socket.io";
+import game from "./game.js";
+
+/**
+ * @typedef {Object} SocketState
+ * @property {string?} player
+ * @property {string?} room
+ * @property {Array<number>} playerDeletionTimers
+ * @property {Array<number>} roomDeletionTimers
+ */
 
 /**
  * Generates a random 6-character room code using alphanumeric characters (excluding easily confused characters).
@@ -71,11 +80,13 @@ export default {
 
     // Socket connection
     io.on("connection", (socket) => {
-      let currentRoom = null;
-      let currentPlayer = null;
-
-      let playerTimers = {};
-      let roomTimers = {};
+      /** @type {SocketState} */
+      let state = {
+        room: null,
+        player: null,
+        playerDeletionTimers: [],
+        roomDeletionTimers: [],
+      };
 
       // A player joins a room
       socket.on(
@@ -96,7 +107,7 @@ export default {
             },
           });
 
-          if (!room) return socket.emit("room:not-found");
+          if (!room) return socket.emit("error:not-found");
 
           let player = room.players.find((p) => p.pseudo == pseudo);
           let reconnected = false;
@@ -114,7 +125,7 @@ export default {
 
             reconnected = true;
           } else {
-            if (room.players.length >= 2) return socket.emit("room:full");
+            if (room.players.length >= 2) return socket.emit("errors:full");
 
             player = await prisma.player.create({
               data: {
@@ -159,17 +170,17 @@ export default {
             io.to(room.code).emit("room:new-player", { player });
           }
 
-          currentRoom = room.code;
-          currentPlayer = player.id;
+          state.room = room.code;
+          state.player = player.id;
 
-          if (roomTimers[currentRoom]) {
-            clearTimeout(roomTimers[currentRoom]);
-            delete roomTimers[currentRoom];
+          if (state.roomDeletionTimers[state.room]) {
+            clearTimeout(state.roomDeletionTimers[state.room]);
+            delete state.roomDeletionTimers[state.room];
           }
 
-          if (playerTimers[currentPlayer]) {
-            clearTimeout(playerTimers[currentPlayer]);
-            delete playerTimers[currentPlayer];
+          if (state.playerDeletionTimers[state.player]) {
+            clearTimeout(state.playerDeletionTimers[state.player]);
+            delete state.playerDeletionTimers[state.player];
           }
 
           socket.join(room.code);
@@ -180,35 +191,38 @@ export default {
       );
 
       socket.on("room:leave", async () => {
-        if (!currentPlayer) return;
-        await removePlayer(currentPlayer, currentRoom);
+        if (!state.player) return;
+        await removePlayer(state.player, state.room);
       });
 
       socket.on("disconnect", async () => {
-        if (!currentPlayer) return;
+        if (!state.player) return;
         if (
-          (await prisma.player.count({ where: { id: currentPlayer } })) === 0
+          (await prisma.player.count({ where: { id: state.player } })) === 0
         ) {
           return;
         }
 
         let player = await prisma.player.update({
-          where: { id: currentPlayer },
+          where: { id: state.player },
           data: { connected: false },
           include: { room: true },
         });
 
+        logger.info(
+          `Player ${player.pseudo} disconnected from room ${player.room.code}`,
+        );
         io.to(player.room.code).emit("room:player-disconnected", { player });
 
-        playerTimers[currentPlayer] = setTimeout(async () => {
-          await removePlayer(currentPlayer, currentRoom);
+        state.playerDeletionTimers[state.player] = setTimeout(async () => {
+          await removePlayer(state.player, state.room);
         }, 60000);
       });
 
       /**
        * Removes a player from a room and handles host transfer if necessary.
        * Deletes the room after 60 seconds if it becomes empty.
-       * @param {number} playerId - The ID of the player to remove
+       * @param {string} playerId - The ID of the player to remove
        * @param {string} roomCode - The room code
        * @returns {Promise<void>}
        */
@@ -265,18 +279,20 @@ export default {
 
         // Suppression salle si vide
         if (updatedRoom && updatedRoom.players.length === 0) {
-          roomTimers[roomCode] = setTimeout(async () => {
+          state.roomDeletionTimers[roomCode] = setTimeout(async () => {
             const room = await prisma.room.findUnique({
               where: { code: roomCode },
             });
-            await prisma.enigma1.delete({ where: { id: room.id } });
-            await prisma.enigma2.delete({ where: { id: room.id } });
-            await prisma.enigma3.delete({ where: { id: room.id } });
-            await prisma.enigma4.delete({ where: { id: room.id } });
+            await prisma.enigma1.delete({ where: { roomId: room.id } });
+            await prisma.enigma2.delete({ where: { roomId: room.id } });
+            await prisma.enigma3.delete({ where: { roomId: room.id } });
+            await prisma.enigma4.delete({ where: { roomId: room.id } });
             await prisma.room.delete({ where: { id: room.id } });
           }, 60000);
         }
       }
+
+      game.registerSocketListeners(io, logger, prisma, socket, state);
     });
   },
 };

@@ -10,7 +10,7 @@ import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import path from "path";
 import { fileURLToPath } from "url";
-import RoomManager from "./RoomManager.js";
+import room from "./room.js";
 import winston from "winston";
 
 /** @type {PrismaClient} Prisma database client instance */
@@ -41,7 +41,7 @@ const logger = winston.createLogger({
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
 
-RoomManager.registerRoutes(logger, prisma, app, io);
+room.registerRoutes(logger, prisma, app, io);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {

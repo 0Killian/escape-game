@@ -98,6 +98,10 @@ function createSocket(server, listeners) {
   });
 
   server.socket.on("room:host-changed", ({ player }) => {
+    server.state.room.players = server.state.room.players.filter(
+      (p) => p.id !== player.id,
+    );
+    server.state.room.players.push(player);
     console.log("onHostChanged");
     if (listeners.onHostChanged) {
       listeners.onHostChanged(server, player);
@@ -113,14 +117,44 @@ function createSocket(server, listeners) {
     }
   });
 
-  server.socket.on("room:reconnected", (player) => {
+  server.socket.on("room:reconnected", ({ player }) => {
+    server.state.room.players = server.state.room.players.filter(
+      (p) => p.id !== player.id,
+    );
+    server.state.room.players.push(player);
     console.log("onReconnected");
     if (listeners.onReconnected) {
       listeners.onReconnected(server, player);
     }
   });
 
-  let errors = ["room:full", "room:already-connected", "room:not-found"];
+  server.socket.on("game:started", () => {
+    console.log("onGameStarted");
+    if (listeners.onGameStarted) {
+      listeners.onGameStarted(server);
+    }
+  });
+
+  server.socket.on("game:scene-changed", ({ scene }) => {
+    console.log("onSceneChanged");
+    if (listeners.onSceneChanged) {
+      listeners.onSceneChanged(server, scene);
+    }
+  });
+
+  server.socket.on("game:update", ({ scene }) => {
+    console.log("onGameUpdate");
+    if (listeners.onGameUpdate) {
+      listeners.onGameUpdate(server, scene);
+    }
+  });
+
+  let errors = [
+    "error:full",
+    "error:not-found",
+    "error:not-authorized",
+    "error:invalid-scene-change",
+  ];
   for (let error of errors) {
     server.socket.on(error, () => {
       console.log("onError");
@@ -144,7 +178,14 @@ function createGameServer(listeners) {
       self: null,
     },
     socket: null,
-    leave: () => {
+
+    start() {
+      gameServer.socket.emit("game:start");
+    },
+    changeScene(scene) {
+      gameServer.socket.emit("game:scene-changed", { scene });
+    },
+    leave() {
       gameServer.socket.emit("room:leave");
     },
   };
@@ -194,8 +235,9 @@ async function joinRoom(pseudo, code, listeners) {
 
 /**
  * Starts the Phaser game instance.
- * @param {GameServer} gameServer - The game server object
+ * @param {GameServer} server - The game server object
  */
-function startGame(gameServer) {
+function startGame(server) {
+  server.start();
   const game = new Phaser.Game(config);
 }

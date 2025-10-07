@@ -45,9 +45,10 @@ model Player {
 // Feedback pédagogique après réussite :
 // "Bravo ! Vous avez compris la continuité narrative. Au cinéma, chaque plan doit s'enchaîner logiquement avec le suivant (règle des 30°, respect de l'axe d'action)."
 model Enigma1 {
-  roomId      String   @id
-  Room        Room     @relation(fields: [roomId], references: [id])
-  storyboards String[]
+  roomId      String  @id
+  Room        Room    @relation(fields: [roomId], references: [id])
+  storyboards Json[]
+  completed   Boolean @default(false)
 }
 
 // ÉNIGME 2 : Le Laboratoire Lumière
@@ -63,9 +64,10 @@ model Enigma1 {
 // Feedback pédagogique :
 // "L'éclairage raconte autant que les dialogues. Le 3-point lighting (key + fill + backlight) est la base. Le low-key crée du mystère, le high-key de la légèreté."
 model Enigma2 {
-  roomId String   @id
-  Room   Room     @relation(fields: [roomId], references: [id])
-  photos String[]
+  roomId    String   @id
+  Room      Room     @relation(fields: [roomId], references: [id])
+  photos    String[]
+  completed Boolean  @default(false)
 }
 
 // ÉNIGME 3 : Le Casting Narratif
@@ -81,9 +83,10 @@ model Enigma2 {
 // Feedback pédagogique :
 // "La plupart des histoires suivent des structures universelles. Le Héros (protagoniste), le Mentor (guide), l'Ombre (antagoniste) sont des rôles récurrents depuis l'Odyssée jusqu'à Star Wars."
 model Enigma3 {
-  roomId String   @id
-  Room   Room     @relation(fields: [roomId], references: [id])
-  roles  String[]
+  roomId    String   @id
+  Room      Room     @relation(fields: [roomId], references: [id])
+  roles     String[]
+  completed Boolean  @default(false)
 }
 
 // ÉNIGME 8 : La Bande-Son Manquante
@@ -99,7 +102,8 @@ model Enigma3 {
 // Feedback pédagogique :
 // "50% de l'émotion au cinéma vient du son ! La même scène peut devenir drôle, effrayante ou romantique selon la musique et les effets sonores."
 model Enigma4 {
-  roomId   String  @id
-  Room     Room    @relation(fields: [roomId], references: [id])
-  ambiance String?
+  roomId    String  @id
+  Room      Room    @relation(fields: [roomId], references: [id])
+  ambiance  String?
+  completed Boolean @default(false)
 }
