@@ -5,25 +5,50 @@
         <title>Escape Game - Salle</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
-            .host { color: #ffd700; }
-            .error { color: #ff4444; margin-top: 10px; }
+            .host {
+                color: #ffd700;
+            }
+            .error {
+                color: #ff4444;
+                margin-top: 10px;
+            }
         </style>
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     </head>
     <body class="bg-black">
         <div class="flex items-center justify-center min-h-screen bg-gray-900">
-            <div class="film-container relative w-[600px] h-[400px] bg-black flex flex-col overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.7)] pt-2 pb-2">
+            <div
+                class="film-container relative w-[600px] h-[400px] bg-black flex flex-col overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.7)] pt-2 pb-2"
+            >
                 <!-- Perforations du haut -->
-                <div id="top-perforations" class="film-perforations top absolute left-0 right-0 h-5 bg-black z-10 flex justify-between px-2 top-0"></div>
+                <div
+                    id="top-perforations"
+                    class="film-perforations top absolute left-0 right-0 h-5 bg-black z-10 flex justify-between px-2 top-0"
+                ></div>
 
-                <div class="section top-section flex flex-col items-center justify-center h-[60px] bg-[#0a0a0a] border-b border-[#333] p-4 text-white">
-                    <div id="code-display" class="code-display font-mono text-2xl font-bold text-[#ffcc00] text-center tracking-[0.2em]"></div>
+                <div
+                    class="section top-section flex flex-col items-center justify-center h-[60px] bg-[#0a0a0a] border-b border-[#333] p-4 text-white"
+                >
+                    <div
+                        id="code-display"
+                        class="code-display font-mono text-2xl font-bold text-[#ffcc00] text-center tracking-[0.2em]"
+                    ></div>
                 </div>
 
-                <div class="section middle-section flex-1 bg-[#111] border-b border-[#333] p-4 text-white">
-                    <h2 class="section-title w-fit font-mono text-[#ffcc00] text-lg uppercase tracking-wider mb-2 font-bold">Acteurs</h2>
-                    <p class="text-[#e0e0e0] text-sm leading-relaxed">Cette section est dédiée aux acteurs du film.</p>
-                    <div class="section-content h-[60%] flex flex-col justify-center text-[#e0e0e0] text-sm leading-relaxed">
+                <div
+                    class="section middle-section flex-1 bg-[#111] border-b border-[#333] p-4 text-white"
+                >
+                    <h2
+                        class="section-title w-fit font-mono text-[#ffcc00] text-lg uppercase tracking-wider mb-2 font-bold"
+                    >
+                        Acteurs
+                    </h2>
+                    <p class="text-[#e0e0e0] text-sm leading-relaxed">
+                        Cette section est dédiée aux acteurs du film.
+                    </p>
+                    <div
+                        class="section-content h-[60%] flex flex-col justify-center text-[#e0e0e0] text-sm leading-relaxed"
+                    >
                         <ul id="players-list" class="list-disc ml-6"></ul>
                         <div id="status" class="mt-2"></div>
                         <div class="error" id="errorMsg"></div>
@@ -31,37 +56,91 @@
                 </div>
 
                 <div class="bottom-sections flex h-[100px]">
-                    <div class="section bottom-left flex-1 bg-[#151515] flex justify-center items-center border-r border-[#333] p-0">
-                        <button id="leaveBtn" class="film-button bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black border-none px-5 py-2 font-mono font-bold text-sm uppercase tracking-wide rounded cursor-pointer transition-all duration-300 shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md">Quitter</button>
+                    <div
+                        class="section bottom-left flex-1 bg-[#151515] flex justify-center items-center border-r border-[#333] p-0"
+                    >
+                        <button
+                            id="leaveBtn"
+                            class="film-button bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black border-none px-5 py-2 font-mono font-bold text-sm uppercase tracking-wide rounded cursor-pointer transition-all duration-300 shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md"
+                        >
+                            Quitter
+                        </button>
                     </div>
-                    <div class="section bottom-right flex-1 bg-[#151515] flex justify-center items-center p-0">
-                        <button id="startBtn" class="film-button bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black border-none px-5 py-2 font-mono font-bold text-sm uppercase tracking-wide rounded cursor-pointer transition-all duration-300 shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md">Commencer</button>
+                    <div
+                        class="section bottom-right flex-1 bg-[#151515] flex justify-center items-center p-0"
+                    >
+                        <button
+                            id="startBtn"
+                            class="film-button bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black border-none px-5 py-2 font-mono font-bold text-sm uppercase tracking-wide rounded cursor-pointer transition-all duration-300 shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md"
+                        >
+                            Commencer
+                        </button>
                     </div>
                 </div>
 
                 <!-- Perforations du bas -->
-                <div id="bottom-perforations" class="film-perforations bottom absolute left-0 right-0 h-5 bg-black z-10 flex justify-between px-2 bottom-0"></div>
+                <div
+                    id="bottom-perforations"
+                    class="film-perforations bottom absolute left-0 right-0 h-5 bg-black z-10 flex justify-between px-2 bottom-0"
+                ></div>
             </div>
         </div>
         <!-- Bouton flottant chat -->
-        <button id="chatBtn" class="fixed bottom-[32px] right-[32px] w-[56px] h-[56px] rounded-full bg-[#007bff] text-white text-[28px] shadow-lg z-[1001] flex items-center justify-center cursor-pointer">
+        <button
+            id="chatBtn"
+            class="fixed bottom-[32px] right-[32px] w-[56px] h-[56px] rounded-full bg-[#007bff] text-white text-[28px] shadow-lg z-[1001] flex items-center justify-center cursor-pointer"
+        >
             💬
-            <span id="chatNotif" class="hidden absolute top-[8px] right-[8px] w-[14px] h-[14px] bg-[#ff4444] rounded-full"></span>
+            <span
+                id="chatNotif"
+                class="hidden absolute top-[8px] right-[8px] w-[14px] h-[14px] bg-[#ff4444] rounded-full"
+            ></span>
         </button>
         <!-- Modale chat -->
-        <div id="chatModal" class="hidden fixed bottom-[100px] right-[32px] w-[340px] max-w-[95vw] h-[420px] max-h-[80vh] bg-[#111] rounded-[16px] shadow-[0_10px_30px_rgba(0,0,0,0.7)] border border-[#333] z-[1002] flex flex-col overflow-hidden">
-            <div class="bg-[#181818] px-6 py-3 font-bold flex items-center justify-between border-b border-[#333]">
-                <span class="text-[#ffcc00] tracking-wider uppercase text-base">Chat de la salle</span>
-                <button id="closeChat" class="bg-transparent border-none text-white text-[22px] cursor-pointer hover:text-[#ffcc00] transition">×</button>
+        <div
+            id="chatModal"
+            class="hidden fixed bottom-[100px] right-[32px] w-[340px] max-w-[95vw] h-[420px] max-h-[80vh] bg-[#111] rounded-[16px] shadow-[0_10px_30px_rgba(0,0,0,0.7)] border border-[#333] z-[1002] flex flex-col overflow-hidden"
+        >
+            <div
+                class="bg-[#181818] px-6 py-3 font-bold flex items-center justify-between border-b border-[#333]"
+            >
+                <span class="text-[#ffcc00] tracking-wider uppercase text-base"
+                    >Chat de la salle</span
+                >
+                <button
+                    id="closeChat"
+                    class="bg-transparent border-none text-white text-[22px] cursor-pointer hover:text-[#ffcc00] transition"
+                >
+                    ×
+                </button>
             </div>
-            <div id="chatMessages" class="flex-1 overflow-y-auto pt-4 px-4" style="height:320px;"></div>
-            <form id="chatForm" class="flex gap-2 p-4 bg-[#111] border-t border-[#333]">
-                <input id="chatInput" type="text" maxlength="500" placeholder="Votre message..." autocomplete="off" class="flex-1 px-3 py-2 rounded bg-[#222] text-white border border-[#333] outline-none focus:ring-2 focus:ring-[#ffcc00] transition" />
-                <button type="submit" class="bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black px-4 py-2 rounded font-bold uppercase text-xs shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] transition">Envoyer</button>
+            <div
+                id="chatMessages"
+                class="flex-1 overflow-y-auto pt-4 px-4"
+                style="height: 320px"
+            ></div>
+            <form
+                id="chatForm"
+                class="flex gap-2 p-4 bg-[#111] border-t border-[#333]"
+            >
+                <input
+                    id="chatInput"
+                    type="text"
+                    maxlength="500"
+                    placeholder="Votre message..."
+                    autocomplete="off"
+                    class="flex-1 px-3 py-2 rounded bg-[#222] text-white border border-[#333] outline-none focus:ring-2 focus:ring-[#ffcc00] transition"
+                />
+                <button
+                    type="submit"
+                    class="bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black px-4 py-2 rounded font-bold uppercase text-xs shadow-md hover:from-[#ff9900] hover:to-[#ffcc00] transition"
+                >
+                    Envoyer
+                </button>
             </form>
         </div>
         <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
         <script src="/assets/main.js"></script>
-        <script src="/assets/roomPage.js"></script>
+        <script src="/assets/room.js"></script>
     </body>
 </html>
