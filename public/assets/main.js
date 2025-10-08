@@ -3,6 +3,20 @@
  */
 
 /**
+ * Phaser game configuration object.
+ * @type {Phaser.Types.Core.GameConfig}
+ */
+const config = {
+  type: Phaser.AUTO,
+  backgroundColor: "#222",
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  scene: [MainScene, Enigma1Scene, Enigma2Scene],
+};
+
+/**
  * Creates and configures a Socket.IO connection with event listeners.
  * @param {GameServer} server - The game server object to attach the socket to
  */
@@ -11,7 +25,7 @@ function createSocket(server) {
 
   server.socket.on("room:new-player", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onJoined) server.listeners.onJoined(server, player);
@@ -19,7 +33,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-disconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onDisconnected)
@@ -28,7 +42,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-left", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     if (server.listeners.onPlayerLeft)
       server.listeners.onPlayerLeft(server, player);
@@ -56,7 +70,7 @@ function createSocket(server) {
 
   server.socket.on("room:reconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onReconnected) {
@@ -204,9 +218,9 @@ function startGame(server) {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MainScene, Enigma1, Enigma3],
+    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene],
   };
-  
+
   const game = new Phaser.Game(config);
   game.scene.start("Main", server);
 }

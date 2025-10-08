@@ -1,4 +1,4 @@
-class Enigma1 extends Phaser.Scene {
+class Enigma1Scene extends Phaser.Scene {
   constructor() {
     super("Enigma1");
     this.images = {};
@@ -21,7 +21,7 @@ class Enigma1 extends Phaser.Scene {
 
   preload() {
     this.keys.forEach((key) =>
-      this.load.image(key, "assets/images/storyboard/" + key + ".png"),
+      this.load.image(key, "assets/images/storyboard/" + key + ".png")
     );
   }
 
@@ -129,23 +129,23 @@ class Enigma1 extends Phaser.Scene {
         /** @type Phaser.Input.Pointer */ _pointer,
         /** @type Phaser.GameObjects.Image */ gameObject,
         /** @type number */ dragX,
-        /** @type number */ dragY,
+        /** @type number */ dragY
       ) => {
         gameObject.x = dragX;
         gameObject.y = dragY;
         this.server.enigma1.move(
           gameObject.getData("key"),
           dragX / this.scale.width,
-          dragY / this.scale.height,
+          dragY / this.scale.height
         );
-      },
+      }
     );
 
     this.input.on(
       "dragend",
       (
         /** @type Phaser.Input.Pointer */ _pointer,
-        /** @type Phaser.GameObjects.Image */ draggedImg,
+        /** @type Phaser.GameObjects.Image */ draggedImg
       ) => {
         // Trouver le slot le plus proche
         let closestSlotIndex = this.slots.reduce((prev, curr) => {
@@ -167,18 +167,18 @@ class Enigma1 extends Phaser.Scene {
           this.server.enigma1.move(
             draggedImg.getData("key"),
             draggedImg.x,
-            draggedImg.y,
+            draggedImg.y
           );
           this.server.enigma1.move(
             otherImg.getData("key"),
             otherImg.x,
-            otherImg.y,
+            otherImg.y
           );
           this.server.enigma1.swapSlots(
             draggedImg.getData("key"),
             otherImg.getData("key"),
             closestSlotIndex,
-            tempSlotIndex,
+            tempSlotIndex
           );
         } else {
           // Sinon remettre draggedImg à son slot initial
@@ -187,7 +187,7 @@ class Enigma1 extends Phaser.Scene {
 
           this.server.enigma1.move(draggedImg.getData("key"), xNDC, yNDC);
         }
-      },
+      }
     );
 
     // Bouton Vérifier

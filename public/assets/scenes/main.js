@@ -64,8 +64,8 @@ class MainScene extends Phaser.Scene {
 
   preload() {
     this.load.image("hallway", "/assets/images/hallway.png");
-    this.load.image("door-green", "/assets/door-green.png");
-    this.load.image("door-red", "/assets/door_red.png");
+    this.load.image("door-green", "/assets/images/door-green.png");
+    this.load.image("door-red", "/assets/images/door-red.png");
   }
 
   create() {
@@ -75,7 +75,7 @@ class MainScene extends Phaser.Scene {
       0,
       this.scale.width,
       this.scale.height,
-      0x1a1a2e,
+      0x1a1a2e
     );
     bg.setOrigin(0, 0);
 
@@ -96,7 +96,7 @@ class MainScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setDisplaySize(
         this.scale.width,
-        this.scale.width * (hallwayHeight / hallwayWidth),
+        this.scale.width * (hallwayHeight / hallwayWidth)
       );
 
     // Calculate hallway floor position for door anchoring
