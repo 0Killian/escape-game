@@ -28,7 +28,7 @@ export default {
         return;
       }
 
-      const room = await prisma.room.findUnique({
+      let room = await prisma.room.findUnique({
         where: {
           id: socketState.room,
         },
@@ -53,11 +53,27 @@ export default {
         return;
       }
 
+      room = await prisma.room.update({
+        where: {
+          id: room.id,
+        },
+        data: {
+          started: true,
+        },
+        include: {
+          players: true,
+          Enigma1: true,
+          Enigma2: true,
+          Enigma3: true,
+          Enigma4: true,
+        },
+      });
+
       logger.info(
         `Player ${player.pseudo} started the game in room ${room.code}`,
       );
 
-      io.to(room.code).emit("game:start");
+      io.to(room.code).emit("game:started");
       io.to(room.code).emit("game:scene-changed", { scene: "main" });
 
       setTimeout(update, 1000);

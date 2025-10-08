@@ -16,6 +16,7 @@ model Room {
   players      Player[]
   messages     Message[]
   timer        Int       @default(2700) // 45 minutes in seconds
+  started      Boolean   @default(false)
   Enigma1      Enigma1?
   Enigma2      Enigma2?
   Enigma3      Enigma3?
