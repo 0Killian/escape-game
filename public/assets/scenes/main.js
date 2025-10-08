@@ -16,16 +16,17 @@ class MainScene extends Phaser.Scene {
     };
 
     if (this.server.state.self.currentScene !== "main") {
-      this.onSceneChanged(this.server.state.self.currentScene);
+      this.onSceneChanged(this.server, this.server.state.self.currentScene);
     }
   }
 
   /**
    * Handles scene change event
    *
+   * @param {GameServer} _server
    * @param {string} scene
    */
-  onSceneChanged(scene) {
+  onSceneChanged(_server, scene) {
     console.log("Scene changed to:", scene);
     this.scene.start(this.getSceneKey(scene), this.server);
   }
@@ -33,9 +34,10 @@ class MainScene extends Phaser.Scene {
   /**
    * Handles game state update event.
    *
+   * @param {GameServer} _server
    * @param {Room} room
    */
-  onUpdate(room) {
+  onUpdate(_server, room) {
     this.updateTimer(room.timer);
     this.updateDoors(room);
   }

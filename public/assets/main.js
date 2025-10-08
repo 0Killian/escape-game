@@ -1,4 +1,3 @@
-/* global Phaser, io */
 /**
  * @fileoverview Client-side game logic and Socket.IO connection management for the escape game.
  */
@@ -14,7 +13,7 @@ const config = {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: Main,
+  scene: [MainScene, Enigma1Scene],
 };
 
 /**
@@ -26,7 +25,7 @@ function createSocket(server) {
 
   server.socket.on("room:new-player", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onJoined) server.listeners.onJoined(server, player);
@@ -34,7 +33,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-disconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onDisconnected)
@@ -43,7 +42,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-left", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     if (server.listeners.onPlayerLeft)
       server.listeners.onPlayerLeft(server, player);
@@ -71,7 +70,7 @@ function createSocket(server) {
 
   server.socket.on("room:reconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onReconnected) {
@@ -213,6 +212,5 @@ async function joinRoom(pseudo, code, listeners) {
  */
 function startGame(server) {
   const game = new Phaser.Game(config);
-  console.log(server);
   game.scene.start("Main", server);
 }

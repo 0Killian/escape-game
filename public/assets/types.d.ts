@@ -1,4 +1,8 @@
 declare global {
+  interface GameEvent {
+    kind: "enigma1:submit-result" | "enigma1:move" | "enigma1:swap-slots";
+    data: any;
+  }
   /**
    * Message object representing a chat message.
    */
@@ -95,6 +99,16 @@ declare global {
 
     /** Function to leave the current room */
     leave(): void;
+
+    /** Functions to manage enigma 1 */
+    enigma1: {
+      /** Move an image to a specific position */
+      move(index: number, x: number, y: number): void;
+      /** Swap the slots of two images */
+      swapSlots(key1: string, key2: string, slot1: number, slot2: number): void;
+      /** Submit the current order */
+      submit(): void;
+    };
   }
 
   /**
