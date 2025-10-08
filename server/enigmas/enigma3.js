@@ -25,12 +25,16 @@ export default {
         },
       });
 
+      // Mettre à jour le tableau des rôles
+      const newRoles = [...room.Enigma3.roles];
+      newRoles[index] = role;
+
       room = await prisma.room.update({
         where: { id: room.id },
         data: {
           Enigma3: {
             update: {
-              roles: room.Enigma3.roles.map((r, i) => (i === index ? r : role)),
+              roles: newRoles,
             },
           },
         },
@@ -43,7 +47,7 @@ export default {
         },
       });
 
-      io.to(socketState.room).emit("room:update", { room });
+      io.to(room.code).emit("game:update", { room });
     });
 
     socket.on("enigma3:submit", async () => {
@@ -58,8 +62,18 @@ export default {
         },
       });
 
-      // TODO: Solution
-      if (false) {
+      // Solution correcte selon les archétypes narratifs du Titanic
+      // Index 0: Héros -> Jack (jack)
+      // Index 1: Mentor -> Molly Brown (molly)
+      // Index 2: Gardien du seuil -> Caledon Hockley (caledon)
+      // Index 3: Allié -> Fabrizio (fabrizio)
+      // Index 4: Ombre -> Rose (rose) - Shapeshifter
+      // Index 5: Trickster -> Spicer Lovejoy (lovejoy)
+      const correctSolution = ["jack", "molly", "caledon", "fabrizio", "rose", "lovejoy"];
+      
+      const isCorrect = room.Enigma3.roles.every((role, index) => role === correctSolution[index]);
+
+      if (isCorrect) {
         room = await prisma.room.update({
           where: { id: room.id },
           data: {
@@ -77,6 +91,10 @@ export default {
             Enigma4: true,
           },
         });
+        
+        logger.info(`Enigma 3 completed in room ${room.code}`);
+      } else {
+        logger.info(`Enigma 3 failed in room ${room.code}`);
       }
 
       io.to(room.code).emit("game:update", { room });

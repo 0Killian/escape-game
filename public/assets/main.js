@@ -3,20 +3,6 @@
  */
 
 /**
- * Phaser game configuration object.
- * @type {Phaser.Types.Core.GameConfig}
- */
-const config = {
-  type: Phaser.AUTO,
-  backgroundColor: "#222",
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene: [MainScene, Enigma1Scene],
-};
-
-/**
  * Creates and configures a Socket.IO connection with event listeners.
  * @param {GameServer} server - The game server object to attach the socket to
  */
@@ -211,6 +197,16 @@ async function joinRoom(pseudo, code, listeners) {
  * @param {GameServer} server - The game server object
  */
 function startGame(server) {
+  const config = {
+    type: Phaser.AUTO,
+    backgroundColor: "#222",
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    scene: [MainScene, Enigma1, Enigma3],
+  };
+  
   const game = new Phaser.Game(config);
   game.scene.start("Main", server);
 }

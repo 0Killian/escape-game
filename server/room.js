@@ -59,7 +59,7 @@ export default {
       });
 
       await prisma.enigma3.create({
-        data: { roomId: room.id, roles: [] },
+        data: { roomId: room.id, roles: ["", "", "", "", "", ""] },
       });
 
       await prisma.enigma4.create({

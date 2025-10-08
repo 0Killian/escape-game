@@ -1,6 +1,6 @@
 declare global {
   interface GameEvent {
-    kind: "enigma1:submit-result" | "enigma1:move" | "enigma1:swap-slots";
+    kind: "enigma1:submit-result" | "enigma1:move" | "enigma1:swap-slots" | "enigma3:update" | "enigma3:submit-result";
     data: any;
   }
   /**
