@@ -12,7 +12,7 @@ export default {
    * @param {Socket} socket
    * @param {import("#room").SocketState} socketState
    */
-  async registerListeners(io, logger, prisma, socket, socketState) {
+  async registerSocketListeners(io, logger, prisma, socket, socketState) {
     socket.on("enigma2:update", async ({ index, lighting }) => {
       let room = await prisma.room.findUnique({
         where: { id: socketState.room },
