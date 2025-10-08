@@ -123,8 +123,8 @@ export default {
     }
 
     enigma1.registerSocketListeners(io, logger, prisma, socket, socketState);
-    // enigma2.registerSocketListeners(io, logger, prisma, socket, socketState);
-    // enigma3.registerSocketListeners(io, logger, prisma, socket, socketState);
-    // enigma4.registerSocketListeners(io, logger, prisma, socket, socketState);
+    enigma2.registerSocketListeners(io, logger, prisma, socket, socketState);
+    enigma3.registerSocketListeners(io, logger, prisma, socket, socketState);
+    enigma4.registerSocketListeners(io, logger, prisma, socket, socketState);
   },
 };

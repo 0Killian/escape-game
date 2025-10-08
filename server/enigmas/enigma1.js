@@ -126,7 +126,7 @@ export default {
       },
     );
 
-    socket.on("enigma1:submit-solution", async () => {
+    socket.on("enigma1:submit", async () => {
       let room = await prisma.room.findUnique({
         where: { id: socketState.room },
         include: {
