@@ -12,24 +12,30 @@
                 color: #ff4444;
                 margin-top: 10px;
             }
-            
+
             /* Bouton retour style cartoon */
             #leaveBtn {
                 background: linear-gradient(135deg, #ff5555 0%, #ff3333 100%);
                 border: 4px solid #fff;
-                box-shadow: 0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4);
+                box-shadow:
+                    0 6px 0 #cc0000,
+                    0 8px 15px rgba(0, 0, 0, 0.4);
             }
-            
+
             #leaveBtn:hover {
                 transform: translateY(2px);
-                box-shadow: 0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4);
+                box-shadow:
+                    0 4px 0 #cc0000,
+                    0 6px 12px rgba(0, 0, 0, 0.4);
             }
-            
+
             #leaveBtn:active {
                 transform: translateY(4px);
-                box-shadow: 0 2px 0 #cc0000, 0 4px 8px rgba(0, 0, 0, 0.4);
+                box-shadow:
+                    0 2px 0 #cc0000,
+                    0 4px 8px rgba(0, 0, 0, 0.4);
             }
-            
+
             /* Icône SVG */
             #leaveBtn svg {
                 filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
@@ -38,7 +44,10 @@
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     </head>
     <body>
-        <div class="flex items-center justify-center min-h-screen bg-[url('/assets/images/waiting_room_bg.jpg')] bg-cover bg-center">
+        <div
+            id="waiting-room"
+            class="flex items-center justify-center min-h-screen bg-[url('/assets/images/waiting_room_bg.jpg')] bg-cover bg-center"
+        >
             <div
                 class="film-container relative w-[500px] h-[340px] bg-black flex flex-col overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.7)] pt-2 pb-2"
             >
@@ -99,15 +108,31 @@
             id="leaveBtn"
             class="fixed top-0 left-0 w-[56px] h-[56px] z-[1001] flex items-center justify-center cursor-pointer transition-all duration-150 rounded-br-[16px]"
         >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M19 12H5M5 12L12 19M5 12L12 5"
+                    stroke="white"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </svg>
         </button>
         <!-- Bouton flottant chat -->
         <button
             id="chatBtn"
             class="fixed bottom-[32px] right-[32px] w-[56px] h-[56px] rounded-full bg-gradient-to-br from-[#007bff] to-[#0056b3] text-white text-[28px] z-[1001] flex items-center justify-center cursor-pointer border-[3px] border-white transition-all duration-150"
-            style="box-shadow: 0 6px 0 #003d82, 0 8px 15px rgba(0, 0, 0, 0.4);"
+            style="
+                box-shadow:
+                    0 6px 0 #003d82,
+                    0 8px 15px rgba(0, 0, 0, 0.4);
+            "
             onmouseover="this.style.transform='translateY(2px)'; this.style.boxShadow='0 4px 0 #003d82, 0 6px 12px rgba(0, 0, 0, 0.4)';"
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 0 #003d82, 0 8px 15px rgba(0, 0, 0, 0.4)';"
             onmousedown="this.style.transform='translateY(4px)'; this.style.boxShadow='0 2px 0 #003d82, 0 4px 8px rgba(0, 0, 0, 0.4)';"
@@ -122,18 +147,29 @@
         <div
             id="chatModal"
             class="hidden fixed bottom-[100px] right-[32px] w-[340px] max-w-[95vw] h-[420px] max-h-[80vh] bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-[20px] border-[4px] border-white z-[1002] flex flex-col overflow-hidden"
-            style="box-shadow: 0 8px 0 #0a0a15, 0 10px 30px rgba(0, 0, 0, 0.7);"
+            style="
+                box-shadow:
+                    0 8px 0 #0a0a15,
+                    0 10px 30px rgba(0, 0, 0, 0.7);
+            "
         >
             <div
                 class="bg-gradient-to-r from-[#ffcc00] to-[#ff9900] px-6 py-3 font-bold flex items-center justify-between border-b-[3px] border-white"
             >
-                <span class="text-black tracking-wider uppercase text-base font-extrabold"
+                <span
+                    class="text-black tracking-wider uppercase text-base font-extrabold"
                     >💬 Chat de la salle</span
                 >
                 <button
                     id="closeChat"
                     class="bg-white text-black w-[32px] h-[32px] rounded-full cursor-pointer hover:bg-[#ffcccc] transition font-bold flex items-center justify-center pb-[5px]"
-                    style="box-shadow: 0 3px 0 #cc7700, 0 4px 8px rgba(0, 0, 0, 0.3); font-size: 28px; line-height: 1;"
+                    style="
+                        box-shadow:
+                            0 3px 0 #cc7700,
+                            0 4px 8px rgba(0, 0, 0, 0.3);
+                        font-size: 28px;
+                        line-height: 1;
+                    "
                     onmouseover="this.style.transform='translateY(1px)'; this.style.boxShadow='0 2px 0 #cc7700, 0 3px 6px rgba(0, 0, 0, 0.3)';"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 0 #cc7700, 0 4px 8px rgba(0, 0, 0, 0.3)';"
                     onmousedown="this.style.transform='translateY(2px)'; this.style.boxShadow='0 1px 0 #cc7700, 0 2px 4px rgba(0, 0, 0, 0.3)';"
@@ -161,7 +197,11 @@
                 <button
                     type="submit"
                     class="bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black px-3 py-2 rounded-lg font-bold uppercase text-xs border-[3px] border-white transition-all duration-150 whitespace-nowrap"
-                    style="box-shadow: 0 4px 0 #cc7700, 0 6px 10px rgba(0, 0, 0, 0.4);"
+                    style="
+                        box-shadow:
+                            0 4px 0 #cc7700,
+                            0 6px 10px rgba(0, 0, 0, 0.4);
+                    "
                     onmouseover="this.style.transform='translateY(1px)'; this.style.boxShadow='0 3px 0 #cc7700, 0 4px 8px rgba(0, 0, 0, 0.4)';"
                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 0 #cc7700, 0 6px 10px rgba(0, 0, 0, 0.4)';"
                     onmousedown="this.style.transform='translateY(3px)'; this.style.boxShadow='0 1px 0 #cc7700, 0 3px 6px rgba(0, 0, 0, 0.4)';"
@@ -171,6 +211,7 @@
             </form>
         </div>
         <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+        <script src="/assets/scenes/main.js"></script>
         <script src="/assets/main.js"></script>
         <script src="/assets/room.js"></script>
     </body>

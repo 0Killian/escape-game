@@ -89,6 +89,10 @@ export default {
         },
       });
 
+      logger.info(
+        `Player ${player.pseudo} tries to change scene from ${player.currentScene} to ${scene}`,
+      );
+
       if (scene === player.currentScene) {
         return;
       }
@@ -120,6 +124,7 @@ export default {
         },
       });
 
+      logger.info(`Player ${player.pseudo} changed scene to ${scene}`);
       io.to(player.room.code).emit("game:scene-changed", { scene });
     });
 

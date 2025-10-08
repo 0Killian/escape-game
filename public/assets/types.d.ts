@@ -17,6 +17,7 @@ declare global {
     pseudo: string;
     isHost: boolean;
     connected: boolean;
+    currentScene: string;
   }
 
   /**
@@ -25,6 +26,9 @@ declare global {
   interface Room {
     /** Unique code for the room */
     code: string;
+
+    /** Whether the game has started */
+    started: boolean;
 
     /** Number of seconds remaining */
     timer: number;
@@ -80,6 +84,9 @@ declare global {
       self: Player;
     };
 
+    /** Event listeners */
+    listeners: SocketListeners;
+
     /** Function to start the game */
     start(): void;
 
@@ -122,7 +129,7 @@ declare global {
     onSceneChanged?(server: GameServer, scene: string): void;
 
     /** Called when the server updates the game state */
-    onGameUpdate?(server: GameServer, scene: string): void;
+    onGameUpdate?(server: GameServer, room: string): void;
 
     /** Called when another player sends a message */
     onNewMessage?(server: GameServer, message: string): void;

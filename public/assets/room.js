@@ -173,6 +173,10 @@ const listeners = {
         break;
     }
   },
+  onGameStarted: (server) => {
+    document.getElementById("waiting-room").style.display = "none";
+    startGame(server);
+  },
   onConnected: (server) => {
     bindChatUI(server);
     renderPlayers(server.state.room.players);
@@ -188,8 +192,7 @@ const listeners = {
 
     document.getElementById("startBtn").onclick = () => {
       if (server.state.room.players.length == 2) {
-        document.getElementById("waiting-room").style.display = "none";
-        startGame(server);
+        server.start();
       } else {
         showError("Vous devez être sdeux joueurs pour commencer la partie.");
       }

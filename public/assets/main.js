@@ -4,59 +4,6 @@
  */
 
 /**
- * Example Phaser scene demonstrating basic game setup.
- * @extends Phaser.Scene
- */
-class Main extends Phaser.Scene {
-  constructor() {
-    super("Main");
-  }
-  /**
-   * Preloads game assets from external source.
-   */
-  preload() {
-    this.load.image("hallway", "assets/hallway.webp");
-    this.load.image("door-red", "assets/door-red.png");
-    this.load.image("door-green", "assets/door-green.png");
-  }
-
-  create() {
-    const startX = 150;
-    const startY = 200;
-    const spacing = 200;
-
-    for (let i = 0; i < 4; i++) {
-      // Crée un conteneur
-      const container = this.add.container(startX + i * spacing, startY);
-
-      // Ajoute l'image du fond
-      const bg = this.add.image(0, 0, "hallway").setScale(0.5);
-
-      // Ajoute l'image du dessus (cliquable)
-      const fg = this.add.image(0, 0, "").setScale(0.5);
-
-      // On rend l'image du dessus interactive
-      fg.setInteractive({ useHandCursor: true });
-
-      // Action au clic
-      fg.on("pointerdown", () => {
-        console.log(`Image ${i + 1} cliquée !`);
-        // Exemple : petite animation
-        this.tweens.add({
-          targets: fg,
-          scale: 0.6,
-          yoyo: true,
-          duration: 150,
-        });
-      });
-
-      // Ajoute les images dans le container
-      container.add([bg, fg]);
-    }
-  }
-}
-
-/**
  * Phaser game configuration object.
  * @type {Phaser.Types.Core.GameConfig}
  */
@@ -68,38 +15,39 @@ const config = {
     width: "100%",
     height: "100%",
   },
-  scene: Main,
+  scene: MainScene,
 };
 
 /**
  * Creates and configures a Socket.IO connection with event listeners.
  * @param {GameServer} server - The game server object to attach the socket to
- * @param {SocketListeners} listeners - Object containing event listener callbacks
  */
-function createSocket(server, listeners) {
+function createSocket(server) {
   server.socket = io();
 
   server.socket.on("room:new-player", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
-    if (listeners.onJoined) listeners.onJoined(server, player);
+    if (server.listeners.onJoined) server.listeners.onJoined(server, player);
   });
 
   server.socket.on("room:player-disconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
-    if (listeners.onDisconnected) listeners.onDisconnected(server, player);
+    if (server.listeners.onDisconnected)
+      server.listeners.onDisconnected(server, player);
   });
 
   server.socket.on("room:player-left", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
-    if (listeners.onPlayerLeft) listeners.onPlayerLeft(server, player);
+    if (server.listeners.onPlayerLeft)
+      server.listeners.onPlayerLeft(server, player);
   });
 
   server.socket.on("room:host-changed", ({ playerId }) => {
@@ -107,42 +55,46 @@ function createSocket(server, listeners) {
       ...p,
       isHost: p.id === playerId,
     }));
-    if (listeners.onHostChanged) {
-      listeners.onHostChanged(server, playerId);
+    if (server.listeners.onHostChanged) {
+      server.listeners.onHostChanged(server, playerId);
     }
   });
 
   server.socket.on("room:joined", ({ room, self }) => {
     server.state.room = room;
     server.state.self = self;
-    if (listeners.onConnected) listeners.onConnected(server);
+    console.log(server.state);
+    if (server.listeners.onConnected) server.listeners.onConnected(server);
+    if (server.state.room.started && server.listeners.onGameStarted) {
+      server.listeners.onGameStarted(server);
+    }
   });
 
   server.socket.on("room:reconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
-    if (listeners.onReconnected) {
-      listeners.onReconnected(server, player);
+    if (server.listeners.onReconnected) {
+      server.listeners.onReconnected(server, player);
     }
   });
 
   server.socket.on("game:started", () => {
-    if (listeners.onGameStarted) {
-      listeners.onGameStarted(server);
+    if (server.listeners.onGameStarted) {
+      server.listeners.onGameStarted(server);
     }
   });
 
   server.socket.on("game:scene-changed", ({ scene }) => {
-    if (listeners.onSceneChanged) {
-      listeners.onSceneChanged(server, scene);
+    if (server.listeners.onSceneChanged) {
+      server.listeners.onSceneChanged(server, scene);
     }
   });
 
-  server.socket.on("game:update", ({ scene }) => {
-    if (listeners.onGameUpdate) {
-      listeners.onGameUpdate(server, scene);
+  server.socket.on("game:update", ({ room }) => {
+    if (server.listeners.onGameUpdate) {
+      server.listeners.onGameUpdate(server, room);
     }
   });
 
@@ -155,12 +107,13 @@ function createSocket(server, listeners) {
 
   for (let code of rawErrors) {
     server.socket.on(code, () => {
-      if (listeners.onError) listeners.onError(server, code);
+      if (server.listeners.onError) server.listeners.onError(server, code);
     });
   }
 
   server.socket.on("chat:new-message", ({ message }) => {
-    if (listeners.onNewMessage) listeners.onNewMessage(server, message);
+    if (server.listeners.onNewMessage)
+      server.listeners.onNewMessage(server, message);
   });
 }
 
@@ -199,20 +152,21 @@ function createGameServer(listeners) {
       room: null,
       self: null,
     },
+    listeners,
     socket: null,
 
     start() {
       gameServer.socket.emit("game:start");
     },
     changeScene(scene) {
-      gameServer.socket.emit("game:scene-changed", { scene });
+      gameServer.socket.emit("game:change-scene", { scene });
     },
     leave() {
       gameServer.socket.emit("room:leave");
     },
   };
 
-  createSocket(gameServer, listeners);
+  createSocket(gameServer);
   return gameServer;
 }
 
@@ -259,6 +213,7 @@ async function joinRoom(pseudo, code, listeners) {
  * @param {GameServer} server - The game server object
  */
 function startGame(server) {
-  server.start();
-  new Phaser.Game(config);
+  const game = new Phaser.Game(config);
+  console.log(server);
+  game.scene.start("Main", server);
 }
