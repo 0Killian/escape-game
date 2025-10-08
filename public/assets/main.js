@@ -9,13 +9,12 @@
  */
 const config = {
   type: Phaser.AUTO,
+  backgroundColor: "#222",
   scale: {
-    mode: Phaser.Scale.RESIZE, // important !
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: "100%",
-    height: "100%",
   },
-  scene: MainScene,
+  scene: Main,
 };
 
 /**
@@ -27,7 +26,7 @@ function createSocket(server) {
 
   server.socket.on("room:new-player", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onJoined) server.listeners.onJoined(server, player);
@@ -35,7 +34,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-disconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onDisconnected)
@@ -44,7 +43,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-left", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     if (server.listeners.onPlayerLeft)
       server.listeners.onPlayerLeft(server, player);
@@ -72,7 +71,7 @@ function createSocket(server) {
 
   server.socket.on("room:reconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id,
+      (p) => p.id !== player.id
     );
     server.state.room.players.push(player);
     if (server.listeners.onReconnected) {
