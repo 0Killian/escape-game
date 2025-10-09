@@ -14,14 +14,12 @@ class Enigma1Scene extends Phaser.Scene {
     this.server = server;
     this.server.listeners = {
       onNewMessage: this.server.listeners.onNewMessage,
-      onSceneChanged: this.onSceneChanged.bind(this),
-      onGameUpdate: this.onGameUpdate.bind(this),
     };
   }
 
   preload() {
     this.keys.forEach((key) =>
-      this.load.image(key, "assets/images/storyboard/" + key + ".png")
+      this.load.image(key, "assets/images/storyboard/" + key + ".png"),
     );
   }
 
@@ -54,22 +52,34 @@ class Enigma1Scene extends Phaser.Scene {
         } else {
           alert("😅 Ce n'est pas encore le bon ordre, continue !");
         }
+        break;
 
       case "enigma1:move": {
-        const key = event.data.key;
-        const { xScreen, yScreen } = this.toScreen(event.data.x, event.data.y);
-        this.images[key].x = xScreen;
-        this.images[key].y = yScreen;
+        for (const move of /** @type {Array<MoveEvent>} */ (event.data)) {
+          const key = move.key;
+          if (move.x === null || move.y === null) {
+            this.images[key].x = this.slots[this.images[key].getData("slot")].x;
+            this.images[key].y = this.slots[this.images[key].getData("slot")].y;
+          } else {
+            const { xScreen, yScreen } = this.toScreen(move.x, move.y);
+            this.images[key].x = xScreen;
+            this.images[key].y = yScreen;
+          }
+        }
         break;
       }
 
       case "enigma1:swap-slots": {
-        const key1 = event.data.key1;
-        const key2 = event.data.key2;
-        const slot1 = event.data.slot1;
-        const slot2 = event.data.slot2;
-        this.images[key1].setData("slot", slot1);
-        this.images[key2].setData("slot", slot2);
+        /** @type {SwapSlotsEvent} */
+        // @ts-ignore - event.data is SwapSlotsEvent for this case
+        const swapData = event.data;
+
+        const key1 = swapData.slot1;
+        const key2 = swapData.slot2;
+        const slot1 = this.images[key1].getData("slot");
+        const slot2 = this.images[key2].getData("slot");
+        this.images[key1].setData("slot", slot2);
+        this.images[key2].setData("slot", slot1);
         break;
       }
 
@@ -113,21 +123,27 @@ class Enigma1Scene extends Phaser.Scene {
         .setOrigin(0.5, 0.5);
     }
 
+    console.log(this.server.state);
+
     // Placer les images dans les slots
-    let storyboardsToMove = [];
     this.server.state.room.Enigma1.storyboards.forEach((storyboard) => {
       /** @type Phaser.GameObjects.Rectangle */
       const slot = this.slots[storyboard.index];
-      if (storyboard.position.x === null) {
-        storyboard.position.x = 0;
-        storyboard.position.y = 0;
-        storyboardsToMove.push(storyboard);
-      }
 
-      const { xScreen, yScreen } = this.toScreen(
-        this.slots[storyboard.index].x,
-        this.slots[storyboard.index].y,
-      );
+      let xScreen, yScreen;
+      if (storyboard.position.x === null || storyboard.position.y === null) {
+        // Initialize to slot position (already in screen space)
+        xScreen = slot.x;
+        yScreen = slot.y;
+      } else {
+        // Use stored position (in NDC, convert to screen)
+        const result = this.toScreen(
+          storyboard.position.x,
+          storyboard.position.y,
+        );
+        xScreen = result.xScreen;
+        yScreen = result.yScreen;
+      }
 
       let img = this.add
         .image(xScreen, yScreen, storyboard.name)
@@ -141,15 +157,6 @@ class Enigma1Scene extends Phaser.Scene {
       this.images[storyboard.name] = img;
     });
 
-    for (let i = 0; i < storyboardsToMove.length; i++) {
-      const storyboard = storyboardsToMove[i];
-      let { xNDC, yNDC } = this.toNDC(
-        this.slots[storyboard.index].x,
-        this.slots[storyboard.index].y,
-      );
-      this.server.enigma1.move(storyboard.name, xNDC, yNDC);
-    }
-
     // Drag & Drop
     this.input.on(
       "drag",
@@ -157,23 +164,22 @@ class Enigma1Scene extends Phaser.Scene {
         /** @type Phaser.Input.Pointer */ _pointer,
         /** @type Phaser.GameObjects.Image */ gameObject,
         /** @type number */ dragX,
-        /** @type number */ dragY
+        /** @type number */ dragY,
       ) => {
         gameObject.x = dragX;
         gameObject.y = dragY;
-        this.server.enigma1.move(
-          gameObject.getData("key"),
-          dragX / this.scale.width,
-          dragY / this.scale.height
-        );
-      }
+        let { xNDC, yNDC } = this.toNDC(dragX, dragY);
+        this.server.enigma1.move([
+          { key: gameObject.getData("key"), x: xNDC, y: yNDC },
+        ]);
+      },
     );
 
     this.input.on(
       "dragend",
       (
         /** @type Phaser.Input.Pointer */ _pointer,
-        /** @type Phaser.GameObjects.Image */ draggedImg
+        /** @type Phaser.GameObjects.Image */ draggedImg,
       ) => {
         // Trouver le slot le plus proche
         let closestSlotIndex = this.slots
@@ -185,39 +191,39 @@ class Enigma1Scene extends Phaser.Scene {
               : prev;
           });
 
-        if (
-          this.slots[closestSlotIndex].image &&
-          this.slots[closestSlotIndex].image !== draggedImg
-        ) {
-          // Echanger les positions
-          const otherImg = this.slots[closestSlotIndex].image;
-          /** @type number */
-          const tempSlotIndex = draggedImg.getData("slot");
+        const currentSlotIndex = draggedImg.getData("slot");
 
-          this.server.enigma1.move(
-            draggedImg.getData("key"),
-            draggedImg.x,
-            draggedImg.y
-          );
-          this.server.enigma1.move(
-            otherImg.getData("key"),
-            otherImg.x,
-            otherImg.y
-          );
-          this.server.enigma1.swapSlots(
-            draggedImg.getData("key"),
-            otherImg.getData("key"),
-            closestSlotIndex,
-            tempSlotIndex
-          );
-        } else {
-          // Sinon remettre draggedImg à son slot initial
-          const slot = draggedImg.getData("slot");
-          let { xNDC, yNDC } = this.toNDC(slot.x, slot.y);
-
-          this.server.enigma1.move(draggedImg.getData("key"), xNDC, yNDC);
+        // If dropped on the same slot, move back to slot position
+        if (closestSlotIndex === currentSlotIndex) {
+          this.server.enigma1.move([
+            { key: draggedImg.getData("key"), x: null, y: null },
+          ]);
+          return;
         }
-      }
+
+        // Find the image in the closest slot to swap with
+        let otherImg = null;
+        for (let key in this.images) {
+          if (
+            this.images[key] !== draggedImg &&
+            this.images[key].getData("slot") === closestSlotIndex
+          ) {
+            otherImg = this.images[key];
+            break;
+          }
+        }
+
+        // Swap slots
+        this.server.enigma1.swapSlots(
+          draggedImg.getData("key"),
+          otherImg.getData("key"),
+        );
+
+        this.server.enigma1.move([
+          { key: draggedImg.getData("key"), x: null, y: null },
+          { key: otherImg.getData("key"), x: null, y: null },
+        ]);
+      },
     );
 
     // Bouton Vérifier
@@ -232,6 +238,12 @@ class Enigma1Scene extends Phaser.Scene {
       .setOrigin(0.5, 0.5)
       .setInteractive()
       .on("pointerdown", () => this.server.enigma1.submit());
+
+    // Setup listeners at the end, after all images are created
+    this.server.listeners = {
+      onSceneChanged: this.onSceneChanged.bind(this),
+      onGameUpdate: this.onGameUpdate.bind(this),
+    };
   }
 
   /**

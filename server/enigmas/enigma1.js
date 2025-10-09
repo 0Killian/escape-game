@@ -25,10 +25,13 @@ export default {
     socket.on(
       "enigma1:move",
       async (
-        /** @type {{ key: string; x: number; y: number }} */
-        { key, x, y },
+        /** @type {Array<{ key: string; x: number; y: number }>} */
+        moves,
       ) => {
-        logger.info(`Moving storyboard ${key} to (${x}, ${y})`);
+        for (const { key, x, y } of moves) {
+          logger.info(`Moving storyboard ${key} to (${x}, ${y})`);
+        }
+
         let room = await prisma.room.findUnique({
           where: { id: socketState.room },
           include: {
@@ -40,18 +43,22 @@ export default {
           },
         });
 
-        /** @type {Storyboard} */
-        // @ts-ignore
-        let storyboard = room.Enigma1.storyboards.find(
-          (/** @type {Storyboard} */ storyboard) => storyboard.name === key,
-        );
-        if (!storyboard) {
-          logger.error(`Storyboard not found for enigma 1 in room ${room.id}`);
-          socket.emit("error:no-found");
-          return;
-        }
+        for (const { key, x, y } of moves) {
+          /** @type {Storyboard} */
+          // @ts-ignore
+          let storyboard = room.Enigma1.storyboards.find(
+            (/** @type {Storyboard} */ storyboard) => storyboard.name === key,
+          );
+          if (!storyboard) {
+            logger.error(
+              `Storyboard not found for enigma 1 in room ${room.id}`,
+            );
+            socket.emit("error:no-found");
+            return;
+          }
 
-        storyboard.position = { x, y };
+          storyboard.position = { x, y };
+        }
 
         room = await prisma.room.update({
           where: { id: room.id },
@@ -71,9 +78,9 @@ export default {
           },
         });
 
-        io.to(room.id).emit("game:update", {
+        io.to(room.code).emit("game:update", {
           room,
-          event: { kind: "engima1:move", data: { key, x, y } },
+          event: { kind: "enigma1:move", data: moves },
         });
       },
     );
@@ -81,8 +88,8 @@ export default {
     socket.on(
       "enigma1:swap-slots",
       async (
-        /** @type {{ key1: string, key2: string }} */
-        { key1, key2 },
+        /** @type {{ slot1: string, slot2: string }} */
+        { slot1, slot2 },
       ) => {
         let room = await prisma.room.findUnique({
           where: { id: socketState.room },
@@ -98,7 +105,7 @@ export default {
         /** @type {Storyboard} */
         // @ts-ignore
         let storyboard1 = room.Enigma1.storyboards.find(
-          (/** @type {Storyboard} */ storyboard) => storyboard.name === key1,
+          (/** @type {Storyboard} */ storyboard) => storyboard.name === slot1,
         );
         if (!storyboard1) {
           logger.error(`Storyboard not found for enigma 1 in room ${room.id}`);
@@ -109,7 +116,7 @@ export default {
         /** @type {Storyboard} */
         // @ts-ignore
         let storyboard2 = room.Enigma1.storyboards.find(
-          (/** @type {Storyboard} */ storyboard) => storyboard.name === key2,
+          (/** @type {Storyboard} */ storyboard) => storyboard.name === slot2,
         );
         if (!storyboard2) {
           logger.error(`Storyboard not found for enigma 1 in room ${room.id}`);
@@ -140,11 +147,14 @@ export default {
           },
         });
 
-        io.to(room.id).emit("game:update", {
+        logger.info(
+          `Enigma 1 swapped slots ${storyboard1.name} and ${storyboard2.name} in room ${room.id}`,
+        );
+        io.to(room.code).emit("game:update", {
           room,
           event: {
-            kind: "engima1:swap-slots",
-            data: { key1: storyboard1.name, key2: storyboard2.name },
+            kind: "enigma1:swap-slots",
+            data: { slot1: storyboard1.name, slot2: storyboard2.name },
           },
         });
       },

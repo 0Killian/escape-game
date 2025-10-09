@@ -254,6 +254,17 @@ export default {
             delete state.playerDeletionTimers[state.player];
           }
 
+          room = await prisma.room.findUnique({
+            where: { id: state.room },
+            include: {
+              players: true,
+              Enigma1: true,
+              Enigma2: true,
+              Enigma3: true,
+              Enigma4: true,
+            },
+          });
+
           socket.join(room.code);
           socket.emit("room:joined", { room, self: player });
 
@@ -313,6 +324,10 @@ export default {
             Enigma4: true,
           },
         });
+
+        if (player.connected) {
+          return;
+        }
 
         // Si le joueur qui part est host, transférer avant suppression
         if (room && room.players.length === 2 && player.isHost) {

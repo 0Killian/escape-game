@@ -1,4 +1,15 @@
 declare global {
+  interface MoveEvent {
+    key: string;
+    x: number;
+    y: number;
+  }
+
+  interface SwapSlotsEvent {
+    slot1: number;
+    slot2: number;
+  }
+
   interface GameEvent {
     kind:
       | "enigma1:submit-result"
@@ -7,8 +18,9 @@ declare global {
       | "enigma3:update"
       | "enigma3:submit-result"
       | "game:timer";
-    data: any;
+    data: Array<MoveEvent> | SwapSlotsEvent | null;
   }
+
   /**
    * Message object representing a chat message.
    */
@@ -109,9 +121,9 @@ declare global {
     /** Functions to manage enigma 1 */
     enigma1: {
       /** Move an image to a specific position */
-      move(key: number, x: number, y: number): void;
+      move(moves: Array<MoveEvent>): void;
       /** Swap the slots of two images */
-      swapSlots(key1: string, key2: string, slot1: number, slot2: number): void;
+      swapSlots(key1: string, key2: string): void;
       /** Submit the current order */
       submit(): void;
     };
@@ -122,22 +134,22 @@ declare global {
    */
   interface SocketListeners {
     /** Called when a new player joins */
-    onJoined?(server: GameServer, player: any): void;
+    onJoined?(server: GameServer, player: Player): void;
 
     /** Called when a player disconnects */
-    onDisconnected?(server: GameServer, player: any): void;
+    onDisconnected?(server: GameServer, player: Player): void;
 
     /** Called when a player leaves */
-    onPlayerLeft?(server: GameServer, player: any): void;
+    onPlayerLeft?(server: GameServer, player: Player): void;
 
     /** Called when the host changes */
-    onHostChanged?(server: GameServer, player: any): void;
+    onHostChanged?(server: GameServer, player: Player): void;
 
     /** Called when successfully connected to a room */
     onConnected?(server: GameServer): void;
 
     /** Called when a player reconnects */
-    onReconnected?(server: GameServer, player: any): void;
+    onReconnected?(server: GameServer, player: Player): void;
 
     /** Called when an error occurs */
     onError?(server: GameServer, error: string): void;
