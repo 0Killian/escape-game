@@ -101,7 +101,7 @@ class Enigma2Scene extends Phaser.Scene {
         } else {
           this.showMessage(
             "Certaines associations sont incorrectes.",
-            "#ffaa00"
+            "#ffaa00",
           );
         }
         break;
@@ -215,7 +215,7 @@ class Enigma2Scene extends Phaser.Scene {
       width,
       height,
       0x000000,
-      0.6
+      0.6,
     );
     overlay.setDepth(-1);
 
@@ -263,7 +263,7 @@ class Enigma2Scene extends Phaser.Scene {
           color: "#FFF",
           fontStyle: "italic",
           fontFamily: "Arial",
-        }
+        },
       )
       .setOrigin(0.5)
       .setDepth(101);
@@ -344,7 +344,7 @@ class Enigma2Scene extends Phaser.Scene {
           photoWidth,
           slotHeight,
           0x1a1a1a,
-          0.85
+          0.85,
         )
         .setStrokeStyle(3, 0x4a90e2, 1);
 
@@ -355,7 +355,7 @@ class Enigma2Scene extends Phaser.Scene {
         photoWidth - 6,
         slotHeight - 6,
         0x000000,
-        0
+        0,
       );
       innerBorder.setStrokeStyle(1, 0xffffff, 0.2);
 
@@ -462,11 +462,11 @@ class Enigma2Scene extends Phaser.Scene {
           this.startDragFromSlot(
             slot.assignedType,
             gameObject.slotIndex,
-            gameObject
+            gameObject,
           );
         }
-      },
-    );
+      }
+    });
 
     this.input.on(
       "drag",
@@ -553,7 +553,7 @@ class Enigma2Scene extends Phaser.Scene {
         buttonWidth,
         buttonHeight,
         0x000000,
-        0.5
+        0.5,
       );
 
       // Rectangle principal avec remplissage sombre
@@ -569,7 +569,7 @@ class Enigma2Scene extends Phaser.Scene {
         buttonWidth - 6,
         buttonHeight - 6,
         0x000000,
-        0
+        0,
       );
       innerRect.setStrokeStyle(1, 0xffffff, 0.2);
 
@@ -590,7 +590,7 @@ class Enigma2Scene extends Phaser.Scene {
         y - buttonHeight / 2 + 15,
         12,
         0x4a90e2,
-        1
+        1,
       );
       infoBadge.setStrokeStyle(2, 0xffffff);
       infoBadge.setDepth(10);
@@ -670,8 +670,8 @@ class Enigma2Scene extends Phaser.Scene {
           shadow,
           innerRect,
           infoBadge,
-          infoText
-        )
+          infoText,
+        ),
       );
       typeBg.on("drag", (pointer, dragX, dragY) => {
         if (this.isDragging) {
@@ -700,8 +700,8 @@ class Enigma2Scene extends Phaser.Scene {
           startX,
           y,
           buttonWidth,
-          buttonHeight
-        )
+          buttonHeight,
+        ),
       );
 
       this.typeButtons.push({
@@ -730,7 +730,7 @@ class Enigma2Scene extends Phaser.Scene {
       buttonWidth,
       buttonHeight,
       0x000000,
-      0.5
+      0.5,
     );
 
     const resetButton = this.add
@@ -740,7 +740,7 @@ class Enigma2Scene extends Phaser.Scene {
         buttonWidth,
         buttonHeight,
         0x1a1a1a,
-        0.9
+        0.9,
       )
       .setStrokeStyle(3, 0xff4444, 0.8)
       .setInteractive({ useHandCursor: true })
@@ -752,7 +752,7 @@ class Enigma2Scene extends Phaser.Scene {
       buttonWidth - 6,
       buttonHeight - 6,
       0x000000,
-      0
+      0,
     );
     resetInner.setStrokeStyle(1, 0xffffff, 0.2);
 
@@ -795,7 +795,7 @@ class Enigma2Scene extends Phaser.Scene {
       buttonWidth,
       buttonHeight,
       0x000000,
-      0.5
+      0.5,
     );
 
     const validateButton = this.add
@@ -805,7 +805,7 @@ class Enigma2Scene extends Phaser.Scene {
         buttonWidth,
         buttonHeight,
         0x1a1a1a,
-        0.9
+        0.9,
       )
       .setStrokeStyle(3, 0x44ff44, 0.8)
       .setInteractive({ useHandCursor: true })
@@ -817,7 +817,7 @@ class Enigma2Scene extends Phaser.Scene {
       buttonWidth - 6,
       buttonHeight - 6,
       0x000000,
-      0
+      0,
     );
     validateInner.setStrokeStyle(1, 0xffffff, 0.2);
 
@@ -864,7 +864,7 @@ class Enigma2Scene extends Phaser.Scene {
     shadowElement,
     innerRectElement,
     infoBadge,
-    infoText
+    infoText,
   ) {
     console.log("startDrag", {
       type,
@@ -892,7 +892,7 @@ class Enigma2Scene extends Phaser.Scene {
     originalX,
     originalY,
     buttonWidth,
-    buttonHeight
+    buttonHeight,
   ) {
     console.log("endDrag", {
       isDragging: this.isDragging,
@@ -986,7 +986,7 @@ class Enigma2Scene extends Phaser.Scene {
     this.messageBg.setStrokeStyle(
       3,
       color === "#00ff00" ? 0x00ff88 : 0xff4444,
-      1
+      1,
     );
     this.messageBg.setDepth(200);
 
@@ -1073,7 +1073,7 @@ class Enigma2Scene extends Phaser.Scene {
       width,
       height,
       0x000000,
-      0.8
+      0.8,
     );
     overlay.setDepth(300);
     overlay.setInteractive();
@@ -1089,7 +1089,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth,
       panelHeight,
       0x000000,
-      0.7
+      0.7,
     );
     panelShadow.setDepth(301);
 
@@ -1100,7 +1100,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth,
       panelHeight,
       0x1a1a1a,
-      0.95
+      0.95,
     );
     panelBg.setStrokeStyle(4, 0x4a90e2, 1);
     panelBg.setDepth(302);
@@ -1112,7 +1112,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth - 8,
       panelHeight - 8,
       0x000000,
-      0
+      0,
     );
     innerBorder.setStrokeStyle(2, 0xffd700, 0.5);
     innerBorder.setDepth(303);
@@ -1153,7 +1153,7 @@ class Enigma2Scene extends Phaser.Scene {
       closeButtonWidth,
       closeButtonHeight,
       0x000000,
-      0.5
+      0.5,
     );
     closeShadow.setDepth(303);
 
@@ -1163,7 +1163,7 @@ class Enigma2Scene extends Phaser.Scene {
       closeButtonWidth,
       closeButtonHeight,
       0x1a1a1a,
-      0.9
+      0.9,
     );
     closeButton.setStrokeStyle(3, 0x4a90e2, 0.8);
     closeButton.setDepth(304);
@@ -1175,7 +1175,7 @@ class Enigma2Scene extends Phaser.Scene {
       closeButtonWidth - 6,
       closeButtonHeight - 6,
       0x000000,
-      0
+      0,
     );
     closeInner.setStrokeStyle(1, 0xffffff, 0.2);
     closeInner.setDepth(304);
@@ -1281,7 +1281,7 @@ class Enigma2Scene extends Phaser.Scene {
       width,
       height,
       0x000000,
-      0.85
+      0.85,
     );
     overlay.setDepth(400);
     overlay.setInteractive();
@@ -1297,7 +1297,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth,
       panelHeight,
       0x000000,
-      0.8
+      0.8,
     );
     panelShadow.setDepth(401);
 
@@ -1308,7 +1308,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth,
       panelHeight,
       0x1a1a1a,
-      0.98
+      0.98,
     );
     panelBg.setStrokeStyle(5, 0x00ff88, 1);
     panelBg.setDepth(402);
@@ -1320,7 +1320,7 @@ class Enigma2Scene extends Phaser.Scene {
       panelWidth - 10,
       panelHeight - 10,
       0x000000,
-      0
+      0,
     );
     innerBorder.setStrokeStyle(3, 0xffd700, 0.6);
     innerBorder.setDepth(403);
@@ -1398,7 +1398,7 @@ Félicitations pour avoir complété cette énigme !`;
       buttonWidth,
       buttonHeight,
       0x000000,
-      0.6
+      0.6,
     );
     buttonShadow.setDepth(403);
 
@@ -1409,7 +1409,7 @@ Félicitations pour avoir complété cette énigme !`;
       buttonWidth,
       buttonHeight,
       0x00ff88,
-      1
+      1,
     );
     validateButton.setStrokeStyle(4, 0xffd700, 1);
     validateButton.setDepth(404);
@@ -1422,7 +1422,7 @@ Félicitations pour avoir complété cette énigme !`;
       buttonWidth - 8,
       buttonHeight - 8,
       0x000000,
-      0
+      0,
     );
     buttonInner.setStrokeStyle(2, 0xffffff, 0.3);
     buttonInner.setDepth(404);

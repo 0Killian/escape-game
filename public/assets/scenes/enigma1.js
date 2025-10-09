@@ -4,6 +4,8 @@ class Enigma1Scene extends Phaser.Scene {
     this.images = {};
     this.slots = [];
     this.keys = ["image1", "image2", "image3", "image4", "image5", "image6"];
+    this.lastMoveTime = 0;
+    this.moveThrottle = 13.33; // milliseconds between move requests
   }
 
   /**
@@ -310,10 +312,16 @@ class Enigma1Scene extends Phaser.Scene {
       ) => {
         gameObject.x = dragX;
         gameObject.y = dragY;
-        let { xNDC, yNDC } = this.toNDC(dragX, dragY);
-        this.server.enigma1.move([
-          { key: gameObject.getData("key"), x: xNDC, y: yNDC },
-        ]);
+
+        // Throttle move requests
+        const currentTime = Date.now();
+        if (currentTime - this.lastMoveTime >= this.moveThrottle) {
+          this.lastMoveTime = currentTime;
+          let { xNDC, yNDC } = this.toNDC(dragX, dragY);
+          this.server.enigma1.move([
+            { key: gameObject.getData("key"), x: xNDC, y: yNDC },
+          ]);
+        }
       },
     );
 
