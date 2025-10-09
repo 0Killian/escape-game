@@ -90,9 +90,10 @@ function createSocket(server) {
     }
   });
 
-  server.socket.on("game:update", ({ room }) => {
+  server.socket.on("game:update", ({ room, event }) => {
+    console.debug("game:update({ room: ", room, ", event: ", event, " })");
     if (server.listeners.onGameUpdate) {
-      server.listeners.onGameUpdate(server, room);
+      server.listeners.onGameUpdate(server, room, event);
     }
   });
 
@@ -161,6 +162,23 @@ function createGameServer(listeners) {
     },
     leave() {
       gameServer.socket.emit("room:leave");
+    },
+
+    enigma1: {
+      move(key, x, y) {
+        gameServer.socket.emit("enigma1:move", { key, x, y });
+      },
+      swapSlots(key1, key2, slot1, slot2) {
+        gameServer.socket.emit("enigma1:swap-slots", {
+          key1,
+          key2,
+          slot1,
+          slot2,
+        });
+      },
+      submit() {
+        gameServer.socket.emit("enigma1:submit");
+      },
     },
   };
 

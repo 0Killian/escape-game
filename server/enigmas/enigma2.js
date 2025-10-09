@@ -45,7 +45,7 @@ export default {
         },
       });
 
-      io.to(socketState.room).emit("room:update", { room });
+      io.to(socketState.room).emit("room:update", { room, event: null });
     });
 
     socket.on("enigma2:submit", async () => {

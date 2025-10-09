@@ -125,7 +125,7 @@ export default {
       });
 
       logger.info(`Player ${player.pseudo} changed scene to ${scene}`);
-      io.to(player.room.code).emit("game:scene-changed", { scene });
+      socket.emit("game:scene-changed", { scene });
     });
 
     async function update() {
@@ -140,7 +140,12 @@ export default {
         },
       });
 
-      io.to(room.code).emit("game:update", { room });
+      io.to(room.code).emit("game:update", {
+        room,
+        event: { kind: "game:timer", data: {} },
+      });
+
+      setTimeout(update, 1000);
     }
 
     enigma1.registerSocketListeners(io, logger, prisma, socket, socketState);

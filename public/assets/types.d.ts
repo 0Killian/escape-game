@@ -1,6 +1,12 @@
 declare global {
   interface GameEvent {
-    kind: "enigma1:submit-result" | "enigma1:move" | "enigma1:swap-slots" | "enigma3:update" | "enigma3:submit-result";
+    kind:
+      | "enigma1:submit-result"
+      | "enigma1:move"
+      | "enigma1:swap-slots"
+      | "enigma3:update"
+      | "enigma3:submit-result"
+      | "game:timer";
     data: any;
   }
   /**
@@ -41,7 +47,7 @@ declare global {
     players: Array<Player>;
 
     /** Enigma 1 state */
-    enigma1: {
+    Enigma1: {
       storyboards: Array<{
         name: string;
         position: {
@@ -54,19 +60,19 @@ declare global {
     };
 
     /** Enigma 2 state */
-    enigma2: {
+    Enigma2: {
       photos: Array<string>;
       completed: boolean;
     };
 
     /** Enigma 3 state */
-    enigma3: {
+    Enigma3: {
       roles: Array<string>;
       completed: boolean;
     };
 
     /** Enigma 4 state */
-    enigma4: {
+    Enigma4: {
       ambiance?: string;
       completed: boolean;
     };
@@ -103,7 +109,7 @@ declare global {
     /** Functions to manage enigma 1 */
     enigma1: {
       /** Move an image to a specific position */
-      move(index: number, x: number, y: number): void;
+      move(key: number, x: number, y: number): void;
       /** Swap the slots of two images */
       swapSlots(key1: string, key2: string, slot1: number, slot2: number): void;
       /** Submit the current order */
@@ -143,7 +149,7 @@ declare global {
     onSceneChanged?(server: GameServer, scene: string): void;
 
     /** Called when the server updates the game state */
-    onGameUpdate?(server: GameServer, room: string): void;
+    onGameUpdate?(server: GameServer, room: string, event: GameEvent): void;
 
     /** Called when another player sends a message */
     onNewMessage?(server: GameServer, message: string): void;

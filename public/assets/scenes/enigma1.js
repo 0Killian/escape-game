@@ -14,7 +14,7 @@ class Enigma1Scene extends Phaser.Scene {
     this.server = server;
     this.server.listeners = {
       onNewMessage: this.server.listeners.onNewMessage,
-      onSceneChanged: this.server.listeners.onSceneChanged,
+      onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onGameUpdate.bind(this),
     };
   }
@@ -31,8 +31,12 @@ class Enigma1Scene extends Phaser.Scene {
    * @param {GameServer} server - The server instance.
    * @param {string} scene - The name of the next scene.
    */
-  changeScene(server, scene) {
-    this.scene.start("Enigma2");
+  onSceneChanged(server, scene) {
+    this.scale.removeAllListeners("resize");
+    this.scale.removeAllListeners("drag");
+    this.input.removeAllListeners("dragend");
+    this.input.removeAllListeners("pointerdown");
+    this.scene.start(this.getSceneKey(scene));
   }
 
   /**
@@ -45,7 +49,7 @@ class Enigma1Scene extends Phaser.Scene {
   onGameUpdate(server, room, event) {
     switch (event.kind) {
       case "enigma1:submit-result":
-        if (room.enigma1.completed) {
+        if (room.Enigma1.completed) {
           alert("🎉 Bravo ! Les images sont dans le bon ordre !");
         } else {
           alert("😅 Ce n'est pas encore le bon ordre, continue !");
@@ -68,6 +72,10 @@ class Enigma1Scene extends Phaser.Scene {
         this.images[key2].setData("slot", slot2);
         break;
       }
+
+      case "game:timer":
+        // TODO: TIMER
+        break;
     }
   }
 
@@ -105,22 +113,42 @@ class Enigma1Scene extends Phaser.Scene {
         .setOrigin(0.5, 0.5);
     }
 
-    // Mélanger les images
-    const shuffledKeys = Phaser.Utils.Array.Shuffle(this.keys);
-
     // Placer les images dans les slots
-    shuffledKeys.forEach((key, index) => {
+    let storyboardsToMove = [];
+    this.server.state.room.Enigma1.storyboards.forEach((storyboard) => {
       /** @type Phaser.GameObjects.Rectangle */
-      const slot = this.slots[index];
-      let img = this.add.image(slot.x, slot.y, key).setInteractive();
+      const slot = this.slots[storyboard.index];
+      if (storyboard.position.x === null) {
+        storyboard.position.x = 0;
+        storyboard.position.y = 0;
+        storyboardsToMove.push(storyboard);
+      }
+
+      const { xScreen, yScreen } = this.toScreen(
+        this.slots[storyboard.index].x,
+        this.slots[storyboard.index].y,
+      );
+
+      let img = this.add
+        .image(xScreen, yScreen, storyboard.name)
+        .setInteractive();
 
       img.setDisplaySize(imageWidth, imageHeight);
-      img.setData("slot", index);
-      img.setData("key", key);
+      img.setData("slot", storyboard.index);
+      img.setData("key", storyboard.name);
 
       this.input.setDraggable(img);
-      this.images.push(img);
+      this.images[storyboard.name] = img;
     });
+
+    for (let i = 0; i < storyboardsToMove.length; i++) {
+      const storyboard = storyboardsToMove[i];
+      let { xNDC, yNDC } = this.toNDC(
+        this.slots[storyboard.index].x,
+        this.slots[storyboard.index].y,
+      );
+      this.server.enigma1.move(storyboard.name, xNDC, yNDC);
+    }
 
     // Drag & Drop
     this.input.on(
@@ -148,12 +176,14 @@ class Enigma1Scene extends Phaser.Scene {
         /** @type Phaser.GameObjects.Image */ draggedImg
       ) => {
         // Trouver le slot le plus proche
-        let closestSlotIndex = this.slots.reduce((prev, curr) => {
-          return Math.abs(this.slots[curr].x - draggedImg.x) <
-            Math.abs(this.slots[prev].x - draggedImg.x)
-            ? curr
-            : prev;
-        });
+        let closestSlotIndex = this.slots
+          .map((_, index) => index)
+          .reduce((prev, curr) => {
+            return Math.abs(this.slots[curr].x - draggedImg.x) <
+              Math.abs(this.slots[prev].x - draggedImg.x)
+              ? curr
+              : prev;
+          });
 
         if (
           this.slots[closestSlotIndex].image &&
@@ -205,24 +235,43 @@ class Enigma1Scene extends Phaser.Scene {
   }
 
   /**
-   * Converts a point from screen coordinates to normalized device coordinates (NDC).
+   * Converts a point from screen coordinates to normalized device coordinates (NDC: [-1, 1]).
    * @param {number} x - The x-coordinate in screen space.
    * @param {number} y - The y-coordinate in screen space.
    * @returns {{xNDC: number, yNDC: number}} The point in NDC.
    */
   toNDC(x, y) {
     const { width, height } = this.cameras.main;
-    return { xNDC: x / width, yNDC: y / height };
+    return { xNDC: (2 * x) / width - 1, yNDC: (2 * y) / height - 1 };
   }
 
   /**
-   * Converts a point from normalized device coordinates (NDC) to screen coordinates.
+   * Converts a point from normalized device coordinates (NDC: [-1, 1]) to screen coordinates.
    * @param {number} xNDC - The x-coordinate in NDC.
    * @param {number} yNDC - The y-coordinate in NDC.
    * @returns {{xScreen: number, yScreen: number}} The point in screen space.
    */
   toScreen(xNDC, yNDC) {
     const { width, height } = this.cameras.main;
-    return { xScreen: xNDC * width, yScreen: yNDC * height };
+    return {
+      xScreen: ((xNDC + 1) * width) / 2,
+      yScreen: ((yNDC + 1) * height) / 2,
+    };
+  }
+
+  /**
+   * Maps the scene key to the corresponding scene name
+   *
+   * @param {string} scene
+   * @returns
+   */
+  getSceneKey(scene) {
+    const mapping = {
+      enigma1: "Enigma1",
+      enigma2: "Enigma2",
+      enigma3: "Enigma3",
+      enigma4: "Enigma4",
+    };
+    return mapping[scene] || "Main";
   }
 }

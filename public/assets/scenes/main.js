@@ -27,7 +27,8 @@ class MainScene extends Phaser.Scene {
    * @param {string} scene
    */
   onSceneChanged(_server, scene) {
-    console.log("Scene changed to:", scene);
+    this.scale.removeAllListeners("resize");
+    this.input.removeAllListeners("pointerdown");
     this.scene.start(this.getSceneKey(scene), this.server);
   }
 
@@ -38,6 +39,7 @@ class MainScene extends Phaser.Scene {
    * @param {Room} room
    */
   onUpdate(_server, room) {
+    console.log(room.timer);
     this.updateTimer(room.timer);
     this.updateDoors(room);
   }

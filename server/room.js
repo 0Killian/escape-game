@@ -51,7 +51,41 @@ export default {
       });
 
       await prisma.enigma1.create({
-        data: { roomId: room.id, storyboards: [] },
+        data: {
+          roomId: room.id,
+          storyboards: [
+            {
+              name: "image1",
+              position: { x: null, y: null },
+              index: 0,
+            },
+            {
+              name: "image2",
+              position: { x: null, y: null },
+              index: 1,
+            },
+            {
+              name: "image3",
+              position: { x: null, y: null },
+              index: 2,
+            },
+            {
+              name: "image4",
+              position: { x: null, y: null },
+              index: 3,
+            },
+            {
+              name: "image5",
+              position: { x: null, y: null },
+              index: 4,
+            },
+            {
+              name: "image6",
+              position: { x: null, y: null },
+              index: 5,
+            },
+          ],
+        },
       });
 
       await prisma.enigma2.create({

@@ -115,10 +115,8 @@ function updateStatus(server) {
   if (!status) return;
   if (server.state.room.players.length < 2) {
     status.textContent = "En attente de joueur...";
-    document.getElementById("startBtn").setAttribute("disabled", "true");
   } else {
     status.textContent = "Salle complète.";
-    document.getElementById("startBtn").removeAttribute("disabled");
   }
 }
 
@@ -191,11 +189,7 @@ const listeners = {
     };
 
     document.getElementById("startBtn").onclick = () => {
-      if (server.state.room.players.length == 2) {
-        server.start();
-      } else {
-        showError("Vous devez être sdeux joueurs pour commencer la partie.");
-      }
+      server.start();
     };
 
     console.log(server.state.room);
