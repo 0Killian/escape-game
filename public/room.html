@@ -13,32 +13,22 @@
                 margin-top: 10px;
             }
 
-            /* Bouton retour style cartoon */
-            #leaveBtn {
-                background: linear-gradient(135deg, #ff5555 0%, #ff3333 100%);
+            /* Bouton retour - adaptatif selon la scène */
+            #backToMenuBtn {
+                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
                 border: 4px solid #fff;
                 box-shadow:
-                    0 6px 0 #cc0000,
+                    0 6px 0 #2e7d32,
                     0 8px 15px rgba(0, 0, 0, 0.4);
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
             }
 
-            #leaveBtn:hover {
+            #backToMenuBtn:hover {
                 transform: translateY(2px);
-                box-shadow:
-                    0 4px 0 #cc0000,
-                    0 6px 12px rgba(0, 0, 0, 0.4);
             }
 
-            #leaveBtn:active {
+            #backToMenuBtn:active {
                 transform: translateY(4px);
-                box-shadow:
-                    0 2px 0 #cc0000,
-                    0 4px 8px rgba(0, 0, 0, 0.4);
-            }
-
-            /* Icône SVG */
-            #leaveBtn svg {
-                filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
             }
         </style>
         <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
@@ -103,9 +93,9 @@
                 ></div>
             </div>
         </div>
-        <!-- Flèche retour en haut à gauche -->
+        <!-- Bouton retour au menu principal (flèche) -->
         <button
-            id="leaveBtn"
+            id="backToMenuBtn"
             class="fixed top-0 left-0 w-[56px] h-[56px] z-[1001] flex items-center justify-center cursor-pointer transition-all duration-150 rounded-br-[16px]"
         >
             <svg
@@ -215,6 +205,7 @@
         <script src="/assets/scenes/enigma1.js"></script>
         <script src="/assets/scenes/enigma2.js"></script>
         <script src="/assets/scenes/enigma3.js"></script>
+        <script src="/assets/scenes/enigma4.js"></script>
         <script src="/assets/main.js"></script>
         <script src="/assets/room.js"></script>
     </body>

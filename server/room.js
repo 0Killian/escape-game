@@ -50,6 +50,14 @@ export default {
         data: { code },
       });
 
+      // Créer un tableau d'indices mélangés pour l'énigme 1
+      const indices = [0, 1, 2, 3, 4, 5];
+      // Fisher-Yates shuffle
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+
       await prisma.enigma1.create({
         data: {
           roomId: room.id,
@@ -57,32 +65,32 @@ export default {
             {
               name: "image1",
               position: { x: null, y: null },
-              index: 0,
+              index: indices[0],
             },
             {
               name: "image2",
               position: { x: null, y: null },
-              index: 1,
+              index: indices[1],
             },
             {
               name: "image3",
               position: { x: null, y: null },
-              index: 2,
+              index: indices[2],
             },
             {
               name: "image4",
               position: { x: null, y: null },
-              index: 3,
+              index: indices[3],
             },
             {
               name: "image5",
               position: { x: null, y: null },
-              index: 4,
+              index: indices[4],
             },
             {
               name: "image6",
               position: { x: null, y: null },
-              index: 5,
+              index: indices[5],
             },
           ],
         },

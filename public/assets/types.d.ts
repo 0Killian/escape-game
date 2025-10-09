@@ -12,12 +12,14 @@ declare global {
 
   interface GameEvent {
     kind:
+      | "enigma1:submit"
       | "enigma1:submit-result"
       | "enigma1:move"
       | "enigma1:swap-slots"
       | "enigma3:update"
       | "enigma3:submit-result"
-      | "game:timer";
+      | "game:timer"
+      | "game:scene-change";
     data: Array<MoveEvent> | SwapSlotsEvent | null;
   }
 

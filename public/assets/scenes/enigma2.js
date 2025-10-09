@@ -9,6 +9,69 @@ class Enigma2Scene extends Phaser.Scene {
     this.typeButtons = [];
   }
 
+  /**
+   * Initialize the scene with the server instance.
+   * @param {GameServer} server - The server instance.
+   */
+  init(server) {
+    this.server = server;
+    this.server.listeners = {
+      onNewMessage: this.server.listeners.onNewMessage,
+      onSceneChanged: this.onSceneChanged.bind(this),
+      onGameUpdate: this.onGameUpdate.bind(this),
+    };
+  }
+
+  /**
+   * Handles scene change event
+   *
+   * @param {GameServer} _server
+   * @param {string} scene
+   */
+  onSceneChanged(_server, scene) {
+    console.log("Enigma2: Scene changed to:", scene);
+    
+    if (scene !== "enigma2") {
+      const sceneMap = {
+        "main": "Main",
+        "enigma1": "Enigma1",
+        "enigma2": "Enigma2",
+        "enigma3": "Enigma3",
+        "enigma4": "Enigma4",
+        "finale": "Finale"
+      };
+      
+      const sceneKey = sceneMap[scene] || "Main";
+      console.log("Enigma2: Starting scene:", sceneKey);
+      this.scene.start(sceneKey, this.server);
+    }
+  }
+
+  /**
+   * Update the scene with the new game state.
+   *
+   * @param {GameServer} server - The server instance.
+   * @param {Room} room - The room instance.
+   * @param {GameEvent} event - The game event.
+   */
+  onGameUpdate(server, room, event) {
+    // Toujours mettre à jour le timer
+    this.updateTimer(room.timer);
+  }
+
+  /**
+   * Updates the timer display
+   *
+   * @param {number} seconds
+   */
+  updateTimer(seconds) {
+    if (this.timerText) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      this.timerText.setText(`⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`);
+    }
+  }
+
   preload() {
     this.load.image("photo1", "assets/images/lumieres/scene1filtre1.png");
     this.load.image("photo2", "assets/images/lumieres/scene1filtre2.png");
@@ -61,6 +124,21 @@ class Enigma2Scene extends Phaser.Scene {
         color: "#ffcc00",
       }
     );
+
+    // === Timer ===
+    this.timerText = this.add
+      .text(width - 20, 20, "", {
+        fontSize: "24px",
+        color: "#ffffff",
+        backgroundColor: "#000000",
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0);
+
+    // Initialiser le timer avec la valeur actuelle
+    if (this.server && this.server.state && this.server.state.room) {
+      this.updateTimer(this.server.state.room.timer);
+    }
 
     this.createPhotosWithSlots();
     this.createTypesPanel();

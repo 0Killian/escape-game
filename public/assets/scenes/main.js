@@ -15,6 +15,7 @@ class MainScene extends Phaser.Scene {
       onGameUpdate: this.onUpdate.bind(this),
     };
 
+    // Si le joueur n'est pas sur la scène "main", le rediriger vers sa scène actuelle
     if (this.server.state.self.currentScene !== "main") {
       this.onSceneChanged(this.server, this.server.state.self.currentScene);
     }
@@ -35,11 +36,13 @@ class MainScene extends Phaser.Scene {
   /**
    * Handles game state update event.
    *
-   * @param {GameServer} _server
+   * @param {GameServer} server
    * @param {Room} room
    */
-  onUpdate(_server, room) {
-    console.log(room.timer);
+  onUpdate(server, room) {
+    // Mettre à jour l'état de la room dans le serveur
+    server.state.room = room;
+    
     this.updateTimer(room.timer);
     this.updateDoors(room);
   }
@@ -50,9 +53,11 @@ class MainScene extends Phaser.Scene {
    * @param {number} seconds
    */
   updateTimer(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    this.timerText.setText(`${minutes}:${secs.toString().padStart(2, "0")}`);
+    if (this.timerText) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      this.timerText.setText(`⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`);
+    }
   }
 
   /**
@@ -175,33 +180,41 @@ class MainScene extends Phaser.Scene {
       doorImg.on("pointerdown", () => {
         this.server.changeScene(door.key);
       });
+    });
 
-      this.add
-        .text(this.scale.width / 2, 10, "STUDIO 404", {
-          fontSize: "64px",
-          fontStyle: "bold",
-          color: "#ffcc00",
-        })
-        .setOrigin(0.5, 0.0);
+    // Titre et sous-titre (en dehors de la boucle)
+    this.add
+      .text(this.scale.width / 2, 10, "STUDIO 404", {
+        fontSize: "64px",
+        fontStyle: "bold",
+        color: "#ffcc00",
+      })
+      .setOrigin(0.5, 0.0);
 
-      this.add
-        .text(this.scale.width / 2, 180, "Choisissez une salle", {
-          fontSize: "28px",
-          color: "#ffffff",
-        })
-        .setOrigin(0.5);
+    this.add
+      .text(this.scale.width / 2, 180, "Choisissez une salle", {
+        fontSize: "28px",
+        color: "#ffffff",
+      })
+      .setOrigin(0.5, 2.5);
 
-      // Timer
-      this.timerText = this.add
-        .text(this.scale.width - 20, 20, "", {
-          fontSize: "24px",
-          color: "#ffffff",
-        })
-        .setOrigin(1, 0);
+    // Timer (en dehors de la boucle)
+    this.timerText = this.add
+      .text(this.scale.width - 20, 20, "", {
+        fontSize: "24px",
+        color: "#ffffff",
+        backgroundColor: "#000000",
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0);
 
-      this.scale.on("resize", () => {
-        this.scene.restart();
-      });
+    // Initialiser le timer avec la valeur actuelle
+    if (this.server.state.room) {
+      this.updateTimer(this.server.state.room.timer);
+    }
+
+    this.scale.on("resize", () => {
+      this.scene.restart();
     });
   }
 

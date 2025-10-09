@@ -79,7 +79,7 @@ class Enigma3Scene extends Phaser.Scene {
     this.server = server;
     this.server.listeners = {
       onNewMessage: this.server.listeners.onNewMessage,
-      onSceneChanged: this.server.listeners.onSceneChanged,
+      onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onGameUpdate.bind(this),
     };
 
@@ -107,6 +107,46 @@ class Enigma3Scene extends Phaser.Scene {
   }
 
   /**
+   * Handles scene change event
+   *
+   * @param {GameServer} _server
+   * @param {string} scene
+   */
+  onSceneChanged(_server, scene) {
+    console.log("Enigma3: Scene changed to:", scene);
+    
+    // Si on quitte cette scène, démarrer la nouvelle scène
+    if (scene !== "enigma3") {
+      // Mapper le nom de la scène vers la clé Phaser
+      const sceneMap = {
+        "main": "Main",
+        "enigma1": "Enigma1",
+        "enigma2": "Enigma2",
+        "enigma3": "Enigma3",
+        "enigma4": "Enigma4",
+        "finale": "Finale"
+      };
+      
+      const sceneKey = sceneMap[scene] || "Main";
+      console.log("Enigma3: Starting scene:", sceneKey);
+      this.scene.start(sceneKey, this.server);
+    }
+  }
+
+  /**
+   * Updates the timer display
+   *
+   * @param {number} seconds
+   */
+  updateTimer(seconds) {
+    if (this.timerText) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      this.timerText.setText(`⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`);
+    }
+  }
+
+  /**
    * Update the scene with the new game state.
    *
    * @param {GameServer} server - The server instance.
@@ -114,6 +154,9 @@ class Enigma3Scene extends Phaser.Scene {
    * @param {GameEvent} event - The game event.
    */
   onGameUpdate(server, room, event) {
+    // Mettre à jour le timer
+    this.updateTimer(room.timer);
+
     // Mettre à jour les assignations depuis le serveur
     if (room.enigma3 && room.enigma3.roles) {
       room.enigma3.roles.forEach((characterKey, roleIndex) => {
@@ -227,6 +270,24 @@ class Enigma3Scene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut",
     });
+
+    // Timer en haut à droite
+    this.timerText = this.add
+      .text(width - 20, 20, "", {
+        fontSize: "32px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(1, 0)
+      .setDepth(102);
+
+    // Initialiser le timer avec la valeur actuelle
+    if (this.server.state.room && this.server.state.room.timer !== undefined) {
+      this.updateTimer(this.server.state.room.timer);
+    }
 
     // Configuration de la grille des personnages (à gauche)
     const charSize = 120;

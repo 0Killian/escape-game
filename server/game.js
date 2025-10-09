@@ -100,19 +100,21 @@ export default {
       switch (scene) {
         case "main":
         case "finale":
+          // Autorisé depuis n'importe quelle scène
           break;
         case "enigma1":
         case "enigma2":
         case "enigma3":
         case "enigma4":
-          switch (player.currentScene) {
-            case "main":
-              io.to(player.room.code).emit("game:scene-changed", { scene });
-              break;
-            default:
-              socket.emit("error:invalid-scene-change");
+          // Les énigmes ne peuvent être accédées que depuis main
+          if (player.currentScene !== "main") {
+            socket.emit("error:invalid-scene-change");
+            return;
           }
           break;
+        default:
+          socket.emit("error:invalid-scene-change");
+          return;
       }
 
       await prisma.player.update({
@@ -124,8 +126,27 @@ export default {
         },
       });
 
+      // Récupérer la room complète avec toutes les énigmes
+      const room = await prisma.room.findUnique({
+        where: {
+          id: player.room.id,
+        },
+        include: {
+          players: true,
+          Enigma1: true,
+          Enigma2: true,
+          Enigma3: true,
+          Enigma4: true,
+        },
+      });
+
       logger.info(`Player ${player.pseudo} changed scene to ${scene}`);
       socket.emit("game:scene-changed", { scene });
+      // Envoyer aussi un update avec les données complètes de la room
+      socket.emit("game:update", {
+        room,
+        event: { kind: "game:scene-change", data: {} },
+      });
     });
 
     async function update() {
@@ -137,6 +158,13 @@ export default {
           timer: {
             decrement: 1,
           },
+        },
+        include: {
+          players: true,
+          Enigma1: true,
+          Enigma2: true,
+          Enigma3: true,
+          Enigma4: true,
         },
       });
 

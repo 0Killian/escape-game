@@ -172,8 +172,15 @@ export default {
         },
       });
 
-      // TODO: Solution
-      if (false) {
+      // Vérifier si l'ordre est correct (chaque image doit être à son index correct)
+      const isCorrect = room.Enigma1.storyboards.every(
+        (/** @type {Storyboard} */ storyboard) => {
+          const imageNumber = parseInt(storyboard.name.replace("image", ""));
+          return storyboard.index === imageNumber - 1;
+        }
+      );
+
+      if (isCorrect) {
         room = await prisma.room.update({
           where: { id: room.id },
           data: {
@@ -191,6 +198,10 @@ export default {
             Enigma4: true,
           },
         });
+        
+        logger.info(`Enigma 1 completed in room ${room.code}`);
+      } else {
+        logger.info(`Enigma 1 failed in room ${room.code}`);
       }
 
       io.to(room.code).emit("game:update", {

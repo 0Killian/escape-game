@@ -149,6 +149,12 @@ const listeners = {
       showChatNotif(true);
     }
   },
+  onSceneChanged: (server, _scene) => {
+    updateBackButton(server);
+  },
+  onGameUpdate: (server, _room, _event) => {
+    updateBackButton(server);
+  },
   onError: (_server, error) => {
     switch (error) {
       case "error:full":
@@ -174,6 +180,7 @@ const listeners = {
   onGameStarted: (server) => {
     document.getElementById("waiting-room").style.display = "none";
     startGame(server);
+    updateBackButton(server);
   },
   onConnected: (server) => {
     bindChatUI(server);
@@ -182,19 +189,76 @@ const listeners = {
 
     document.getElementById("code-display").textContent = roomCode;
 
-    document.getElementById("leaveBtn").onclick = () => {
-      server.leave();
-      localStorage.removeItem("playerId");
-      window.location.assign("/");
-    };
-
     document.getElementById("startBtn").onclick = () => {
       server.start();
     };
 
     console.log(server.state.room);
+
+    // Si le jeu a déjà commencé (reconnexion après rechargement), démarrer le jeu
+    if (server.state.room.started) {
+      document.getElementById("waiting-room").style.display = "none";
+      
+      // Démarrer le jeu - MainScene.init() gérera la redirection vers la scène actuelle
+      startGame(server);
+      
+      updateBackButton(server);
+    }
   },
 };
+
+/**
+ * Updates the back button appearance based on current scene
+ *
+ * @param {GameServer} server
+ */
+function updateBackButton(server) {
+  const backBtn = document.getElementById("backToMenuBtn");
+  if (!backBtn) return;
+
+  // Retirer les anciens listeners pour éviter les doublons
+  const newBtn = backBtn.cloneNode(true);
+  backBtn.parentNode.replaceChild(newBtn, backBtn);
+
+  if (server.state.self.currentScene === "main") {
+    // Dans la scène principale : bouton rouge pour quitter
+    newBtn.style.background = "linear-gradient(135deg, #ff5555 0%, #ff3333 100%)";
+    newBtn.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtn.title = "Quitter la partie";
+
+    // Gestion des effets hover pour le bouton rouge
+    newBtn.onmouseenter = () => {
+      newBtn.style.boxShadow = "0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    };
+    newBtn.onmouseleave = () => {
+      newBtn.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    };
+  } else {
+    // Dans une énigme : bouton vert pour retour au menu
+    newBtn.style.background = "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
+    newBtn.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtn.title = "Retour au menu principal";
+
+    // Gestion des effets hover pour le bouton vert
+    newBtn.onmouseenter = () => {
+      newBtn.style.boxShadow = "0 4px 0 #2e7d32, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    };
+    newBtn.onmouseleave = () => {
+      newBtn.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    };
+  }
+
+  // Action au clic
+  newBtn.onclick = () => {
+    if (server.state.self.currentScene === "main") {
+      server.leave();
+      localStorage.removeItem("playerId");
+      window.location.assign("/");
+    } else {
+      server.changeScene("main");
+    }
+  };
+}
 
 /**
  * Renders messages in the chat

@@ -93,6 +93,13 @@ function createSocket(server) {
   server.socket.on("game:update", ({ room, event }) => {
     console.debug("game:update({ room: ", room, ", event: ", event, " })");
     server.state.room = room;
+    
+    // Mettre à jour aussi les informations du joueur actuel
+    const currentPlayer = room.players.find(p => p.id === server.state.self.id);
+    if (currentPlayer) {
+      server.state.self = currentPlayer;
+    }
+    
     if (server.listeners.onGameUpdate) {
       server.listeners.onGameUpdate(server, room, event);
     }
@@ -226,8 +233,9 @@ async function joinRoom(pseudo, code, listeners) {
 /**
  * Starts the Phaser game instance.
  * @param {GameServer} server - The game server object
+ * @param {string} [startScene] - The scene to start on (default: "Main")
  */
-function startGame(server) {
+function startGame(server, startScene = "Main") {
   const config = {
     type: Phaser.AUTO,
     backgroundColor: "#222",
@@ -235,9 +243,21 @@ function startGame(server) {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene],
+    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene, Enigma4Scene],
   };
 
   const game = new Phaser.Game(config);
-  game.scene.start("Main", server);
+  
+  // Mapper le nom de scène côté serveur vers le nom de scène Phaser
+  const sceneMap = {
+    "main": "Main",
+    "enigma1": "Enigma1",
+    "enigma2": "Enigma2",
+    "enigma3": "Enigma3",
+    "enigma4": "Enigma4",
+    "finale": "Finale"
+  };
+  
+  const sceneKey = sceneMap[startScene] || startScene;
+  game.scene.start(sceneKey, server);
 }
