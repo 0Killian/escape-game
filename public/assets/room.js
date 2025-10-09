@@ -60,10 +60,60 @@ function bindChatUI(server) {
   const chatForm = document.getElementById("chatForm");
   const chatModal = document.getElementById("chatModal");
   const chatInput = document.getElementById("chatInput");
+  
+  // Ensure the modal can receive focus and trap interaction
+  if (chatModal && !chatModal.hasAttribute("tabindex")) {
+    chatModal.setAttribute("tabindex", "-1");
+    chatModal.setAttribute("role", "dialog");
+    chatModal.setAttribute("aria-modal", "true");
+  }
+
+  // Create (once) a backdrop that blocks clicks to the game canvas
+  let backdrop = document.getElementById("chatBackdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "chatBackdrop";
+    Object.assign(backdrop.style, {
+      position: "fixed",
+      inset: "0",
+      background: "rgba(0,0,0,0.35)",
+      zIndex: "1001", // just below the modal (1002)
+      display: "none",
+      pointerEvents: "none", // don't block clicks outside the modal
+    });
+    document.body.appendChild(backdrop);
+  }
+
+  // Stop events on modal and backdrop from reaching Phaser/window
+  const stopEvents = (e) => {
+    // Let target handlers (like close button) run, but prevent bubbling to canvas
+    e.stopPropagation();
+  };
+  if (chatModal && !chatModal.dataset.eventsBound) {
+    ["pointerdown","pointerup","click","mousedown","mouseup","touchstart","touchend"].forEach((t) => {
+      // only bubble phase: allow the event to hit the controls inside the modal first
+      chatModal.addEventListener(t, stopEvents, false);
+    });
+    chatModal.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        // Close on Esc
+        if (chatModal) chatModal.style.display = "none";
+        if (backdrop) backdrop.style.display = "none";
+        chatOpen = false;
+      }
+    });
+    chatModal.dataset.eventsBound = "1";
+  }
+  // Backdrop is purely visual now (no event interception)
 
   if (chatBtn)
     chatBtn.onclick = async () => {
-      if (chatModal) chatModal.style.display = "flex";
+      if (chatModal) {
+        chatModal.style.display = "flex";
+        // show and focus modal, ensure it captures keyboard focus
+        try { chatModal.focus({ preventScroll: true }); } catch {}
+      }
+      if (backdrop) backdrop.style.display = "block";
       chatOpen = true;
       showChatNotif(false);
       if (server && server.state && server.state.room) {
@@ -74,6 +124,7 @@ function bindChatUI(server) {
   if (closeChat)
     closeChat.onclick = () => {
       if (chatModal) chatModal.style.display = "none";
+      if (backdrop) backdrop.style.display = "none";
       chatOpen = false;
     };
   if (chatForm)
@@ -219,37 +270,38 @@ function updateBackButton(server) {
   // Retirer les anciens listeners pour éviter les doublons
   const newBtn = backBtn.cloneNode(true);
   backBtn.parentNode.replaceChild(newBtn, backBtn);
+  const newBtnEl = /** @type {HTMLElement} */ (newBtn);
 
   if (server.state.self.currentScene === "main") {
     // Dans la scène principale : bouton rouge pour quitter
-    newBtn.style.background = "linear-gradient(135deg, #ff5555 0%, #ff3333 100%)";
-    newBtn.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
-    newBtn.title = "Quitter la partie";
+  newBtnEl.style.background = "linear-gradient(135deg, #ff5555 0%, #ff3333 100%)";
+  newBtnEl.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+  newBtnEl.title = "Quitter la partie";
 
     // Gestion des effets hover pour le bouton rouge
-    newBtn.onmouseenter = () => {
-      newBtn.style.boxShadow = "0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    newBtnEl.onmouseenter = () => {
+      newBtnEl.style.boxShadow = "0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4)";
     };
-    newBtn.onmouseleave = () => {
-      newBtn.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtnEl.onmouseleave = () => {
+      newBtnEl.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
     };
   } else {
     // Dans une énigme : bouton vert pour retour au menu
-    newBtn.style.background = "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
-    newBtn.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
-    newBtn.title = "Retour au menu principal";
+    newBtnEl.style.background = "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
+    newBtnEl.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtnEl.title = "Retour au menu principal";
 
     // Gestion des effets hover pour le bouton vert
-    newBtn.onmouseenter = () => {
-      newBtn.style.boxShadow = "0 4px 0 #2e7d32, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    newBtnEl.onmouseenter = () => {
+      newBtnEl.style.boxShadow = "0 4px 0 #2e7d32, 0 6px 12px rgba(0, 0, 0, 0.4)";
     };
-    newBtn.onmouseleave = () => {
-      newBtn.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtnEl.onmouseleave = () => {
+      newBtnEl.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
     };
   }
 
   // Action au clic
-  newBtn.onclick = () => {
+  newBtnEl.onclick = () => {
     if (server.state.self.currentScene === "main") {
       server.leave();
       localStorage.removeItem("playerId");
