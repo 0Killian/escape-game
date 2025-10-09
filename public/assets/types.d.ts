@@ -6,8 +6,8 @@ declare global {
   }
 
   interface SwapSlotsEvent {
-    slot1: number;
-    slot2: number;
+    slot1: string;
+    slot2: string;
   }
 
   interface GameEvent {

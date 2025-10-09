@@ -80,6 +80,11 @@ class Enigma1Scene extends Phaser.Scene {
         const slot2 = this.images[key2].getData("slot");
         this.images[key1].setData("slot", slot2);
         this.images[key2].setData("slot", slot1);
+
+        this.server.enigma1.move([
+          { key: key1, x: null, y: null },
+          { key: key2, x: null, y: null },
+        ]);
         break;
       }
 
@@ -218,11 +223,6 @@ class Enigma1Scene extends Phaser.Scene {
           draggedImg.getData("key"),
           otherImg.getData("key"),
         );
-
-        this.server.enigma1.move([
-          { key: draggedImg.getData("key"), x: null, y: null },
-          { key: otherImg.getData("key"), x: null, y: null },
-        ]);
       },
     );
 
