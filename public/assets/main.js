@@ -186,6 +186,18 @@ function createGameServer(listeners) {
         gameServer.socket.emit("enigma1:submit");
       },
     },
+
+    enigma2: {
+      update(index, lighting) {
+        gameServer.socket.emit("enigma2:update", { index, lighting });
+      },
+      reset() {
+        gameServer.socket.emit("enigma2:reset");
+      },
+      submit() {
+        gameServer.socket.emit("enigma2:submit");
+      },
+    },
   };
 
   createSocket(gameServer);

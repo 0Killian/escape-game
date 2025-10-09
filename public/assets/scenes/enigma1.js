@@ -26,57 +26,12 @@ class Enigma1Scene extends Phaser.Scene {
   }
 
   /**
-   * Handles scene change event
-   *
-   * @param {GameServer} _server
-   * @param {string} scene
-   */
-  onSceneChanged(_server, scene) {
-    console.log("Enigma1: Scene changed to:", scene);
-    
-    // Si on quitte cette scène, démarrer la nouvelle scène
-    if (scene !== "enigma1") {
-      // Mapper le nom de la scène vers la clé Phaser
-      const sceneMap = {
-        "main": "Main",
-        "enigma1": "Enigma1",
-        "enigma2": "Enigma2",
-        "enigma3": "Enigma3",
-        "enigma4": "Enigma4",
-        "finale": "Finale"
-      };
-      
-      const sceneKey = sceneMap[scene] || "Main";
-      console.log("Enigma1: Starting scene:", sceneKey);
-      this.scene.start(sceneKey, this.server);
-    }
-  }
 
-  /**
-   * Handles scene change event
-   *
-   * @param {GameServer} _server
-   * @param {string} scene
+   * Handles error messages from the server.
+   * @param {string} message - The error message.
    */
-  onSceneChanged(_server, scene) {
-    console.log("Enigma1: Scene changed to:", scene);
-    
-    // Si on quitte cette scène, démarrer la nouvelle scène
-    if (scene !== "enigma1") {
-      // Mapper le nom de la scène vers la clé Phaser
-      const sceneMap = {
-        "main": "Main",
-        "enigma1": "Enigma1",
-        "enigma2": "Enigma2",
-        "enigma3": "Enigma3",
-        "enigma4": "Enigma4",
-        "finale": "Finale"
-      };
-      
-      const sceneKey = sceneMap[scene] || "Main";
-      console.log("Enigma1: Starting scene:", sceneKey);
-      this.scene.start(sceneKey, this.server);
-    }
+  onError(message) {
+    console.error("Error:", message);
   }
 
   /**
@@ -382,7 +337,11 @@ class Enigma1Scene extends Phaser.Scene {
       },
     );
 
-    // Bouton Vérifier - positionné en bas de l'écran
+    this.scale.on("resize", () => {
+      this.scene.restart();
+    });
+
+    // Bouton Vérifier
     const yButton = screenHeight - 60;
     this.add
       .text(screenWidth / 2, yButton, "✓ VÉRIFIER", {
@@ -405,10 +364,7 @@ class Enigma1Scene extends Phaser.Scene {
       .on("pointerdown", () => this.server.enigma1.submit());
 
     // Setup listeners at the end, after all images are created
-    this.server.listeners = {
-      onSceneChanged: this.onSceneChanged.bind(this),
-      onGameUpdate: this.onGameUpdate.bind(this),
-    };
+    this.server.listeners.onGameUpdate = this.onGameUpdate.bind(this);
   }
 
   /**

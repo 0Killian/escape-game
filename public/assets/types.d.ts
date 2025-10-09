@@ -10,12 +10,20 @@ declare global {
     slot2: string;
   }
 
+  interface Enigma2UpdateEvent {
+    index: number;
+    lighting: string;
+  }
+
   interface GameEvent {
     kind:
       | "enigma1:submit"
       | "enigma1:submit-result"
       | "enigma1:move"
       | "enigma1:swap-slots"
+      | "enigma2:update"
+      | "enigma2:reset"
+      | "enigma2:submit-result"
       | "enigma3:update"
       | "enigma3:submit-result"
       | "game:timer"
@@ -76,6 +84,7 @@ declare global {
     /** Enigma 2 state */
     Enigma2: {
       photos: Array<string>;
+      typesOrder: Array<string>;
       completed: boolean;
     };
 
@@ -127,6 +136,16 @@ declare global {
       /** Swap the slots of two images */
       swapSlots(key1: string, key2: string): void;
       /** Submit the current order */
+      submit(): void;
+    };
+
+    /** Functions to manage enigma 2 */
+    enigma2: {
+      /** Update the lighting type for a photo */
+      update(index: number, lighting: string): void;
+      /** Reset all assignments */
+      reset(): void;
+      /** Submit the current assignments for validation */
       submit(): void;
     };
   }

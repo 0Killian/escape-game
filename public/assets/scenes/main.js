@@ -13,12 +13,23 @@ class MainScene extends Phaser.Scene {
     this.server.listeners = {
       onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onUpdate.bind(this),
+      onError: this.onError.bind(this),
+      onNewMessage: this.server.listeners.onNewMessage,
     };
 
     // Si le joueur n'est pas sur la scène "main", le rediriger vers sa scène actuelle
     if (this.server.state.self.currentScene !== "main") {
       this.onSceneChanged(this.server, this.server.state.self.currentScene);
     }
+  }
+
+  /**
+   * Handles error event
+   *
+   * @param {string} error
+   */
+  onError(error) {
+    console.error(error);
   }
 
   /**
@@ -82,7 +93,7 @@ class MainScene extends Phaser.Scene {
       0,
       this.scale.width,
       this.scale.height,
-      0x1a1a2e
+      0x1a1a2e,
     );
     bg.setOrigin(0, 0);
 
@@ -103,7 +114,7 @@ class MainScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setDisplaySize(
         this.scale.width,
-        this.scale.width * (hallwayHeight / hallwayWidth)
+        this.scale.width * (hallwayHeight / hallwayWidth),
       );
 
     // Calculate hallway floor position for door anchoring

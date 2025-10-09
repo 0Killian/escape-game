@@ -3,6 +3,8 @@ class Enigma2Scene extends Phaser.Scene {
     super({ key: "Enigma2" });
     this.draggedType = null;
     this.isDragging = false;
+    this.draggedFromSlot = false;
+    this.draggedFromSlotIndex = null;
     this.score = 0;
     this.totalPhotos = 5;
     this.typeSlots = [];
@@ -81,6 +83,142 @@ class Enigma2Scene extends Phaser.Scene {
     this.load.image("background", "assets/images/lumieres/lightning-bg.png");
   }
 
+  /**
+   * Initialize the scene with the server instance.
+   * @param {GameServer} server - The server instance.
+   */
+  init(server) {
+    this.server = server;
+    this.server.listeners = {
+      onNewMessage: this.server.listeners.onNewMessage,
+      onError: this.onError.bind(this),
+      onSceneChanged: this.onSceneChanged.bind(this),
+    };
+  }
+
+  /**
+   * Handles error messages from the server.
+   * @param {string} message - The error message.
+   */
+  onError(message) {
+    console.error("Error:", message);
+  }
+
+  /**
+   * Changes the scene to the next scene.
+   *
+   * @param {GameServer} server - The server instance.
+   * @param {string} scene - The name of the next scene.
+   */
+  onSceneChanged(server, scene) {
+    this.scale.removeAllListeners("resize");
+    this.input.removeAllListeners("drop");
+    this.input.removeAllListeners("dragstart");
+    this.input.removeAllListeners("drag");
+    this.input.removeAllListeners("dragend");
+    this.input.removeAllListeners("pointerdown");
+    this.scene.start(this.getSceneKey(scene));
+  }
+
+  /**
+   * Update the scene with the new game state.
+   *
+   * @param {GameServer} server - The server instance.
+   * @param {Room} room - The room instance.
+   * @param {GameEvent} event - The game event.
+   */
+  onGameUpdate(server, room, event) {
+    console.log("onGameUpdate", { event, room });
+    switch (event.kind) {
+      case "enigma2:update":
+      case "enigma2:reset":
+        // Update UI based on server state
+        this.updateUIFromServerState(room.Enigma2.photos);
+        break;
+
+      case "enigma2:submit-result":
+        if (event.data.completed) {
+          this.showMessage(
+            "Parfait ! Toutes les associations sont correctes!",
+            "#00ff00",
+          );
+        } else {
+          this.showMessage(
+            "Certaines associations sont incorrectes.",
+            "#ffaa00",
+          );
+        }
+        break;
+
+      case "game:timer":
+        // TODO: TIMER
+        break;
+    }
+  }
+
+  /**
+   * Updates the UI based on the server state
+   * @param {Array<string>} photos - The photos array from server state
+   */
+  updateUIFromServerState(photos) {
+    console.log("updateUIFromServerState", { photos });
+    // Reset all UI elements first
+    this.typeSlots.forEach((slot, index) => {
+      const assignedType = photos[index];
+
+      // Update slot (check for non-empty string)
+      if (assignedType && assignedType !== "") {
+        slot.assignedType = assignedType;
+        slot.text.setText(assignedType);
+        slot.text.setColor("#ffffff");
+        slot.background.setFillStyle(0x004422);
+
+        // Enable dragging when slot has content
+        this.input.setDraggable(slot.text, true);
+      } else {
+        slot.assignedType = null;
+        slot.text.setText("Déposez ici");
+        slot.text.setColor("#999999");
+        slot.background.setFillStyle(0x333333);
+
+        // Disable dragging when slot is empty
+        this.input.setDraggable(slot.text, false);
+      }
+    });
+
+    // Update type buttons based on what's been used
+    this.typeButtons.forEach((typeButton) => {
+      // Check if this type is used (not empty string)
+      const isUsed = photos.some((p) => p === typeButton.type);
+      typeButton.used = isUsed;
+      if (isUsed) {
+        typeButton.background.setFillStyle(0x666666);
+        typeButton.text.setAlpha(0.6);
+      } else {
+        typeButton.background.setFillStyle(0x444444);
+        typeButton.text.setAlpha(1);
+      }
+    });
+
+    this.updateScore();
+  }
+
+  /**
+   * Maps the scene key to the corresponding scene name
+   *
+   * @param {string} scene
+   * @returns
+   */
+  getSceneKey(scene) {
+    const mapping = {
+      enigma1: "Enigma1",
+      enigma2: "Enigma2",
+      enigma3: "Enigma3",
+      enigma4: "Enigma4",
+    };
+    return mapping[scene] || "Main";
+  }
+
   create() {
     const { width, height } = this.scale;
 
@@ -122,7 +260,7 @@ class Enigma2Scene extends Phaser.Scene {
       {
         fontSize: "16px",
         color: "#ffcc00",
-      }
+      },
     );
 
     // === Timer ===
@@ -143,6 +281,9 @@ class Enigma2Scene extends Phaser.Scene {
     this.createPhotosWithSlots();
     this.createTypesPanel();
     this.createActionButtons();
+
+    // Load initial state from server
+    this.updateUIFromServerState(this.server.state.room.Enigma2.photos);
   }
 
   createPhotosWithSlots() {
@@ -185,7 +326,7 @@ class Enigma2Scene extends Phaser.Scene {
           y + photoHeight + 25,
           photoWidth,
           slotHeight,
-          0x333333
+          0x333333,
         )
         .setStrokeStyle(2, 0x666666);
 
@@ -194,7 +335,13 @@ class Enigma2Scene extends Phaser.Scene {
           fontSize: "12px",
           color: "#999999",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      // Store original position for drag operations
+      slotText.originalX = x + photoWidth / 2;
+      slotText.originalY = y + photoHeight + 25;
+      slotText.slotIndex = index;
 
       const slotZone = this.add
         .zone(x + photoWidth / 2, y + photoHeight + 25, photoWidth, slotHeight)
@@ -212,21 +359,54 @@ class Enigma2Scene extends Phaser.Scene {
 
     // Gestion du drop
     this.input.on("drop", (pointer, gameObject, dropZone) => {
+      console.log("Drop event fired", {
+        isDragging: this.isDragging,
+        draggedType: this.draggedType,
+        slotIndex: dropZone.slotIndex,
+      });
       if (this.isDragging && this.draggedType != null) {
-        this.assignTypeToSlot(dropZone.slotIndex);
+        this.assignTypeToSlot(dropZone.slotIndex, this.draggedType);
+      }
+    });
+
+    // Global drag handlers for slot text elements
+    this.input.on("dragstart", (pointer, gameObject) => {
+      // Check if this is a slot text being dragged
+      if (gameObject.slotIndex !== undefined) {
+        const slot = this.typeSlots[gameObject.slotIndex];
+        if (slot && slot.assignedType) {
+          this.startDragFromSlot(slot.assignedType, gameObject.slotIndex, gameObject);
+        }
+      }
+    });
+
+    this.input.on("drag", (pointer, gameObject, dragX, dragY) => {
+      // Check if this is a slot text being dragged
+      if (gameObject.slotIndex !== undefined && this.draggedFromSlot) {
+        gameObject.x = dragX;
+        gameObject.y = dragY;
+      }
+    });
+
+    this.input.on("dragend", (pointer, gameObject) => {
+      // Check if this is a slot text being dragged
+      if (gameObject.slotIndex !== undefined && this.draggedFromSlot) {
+        this.endDragFromSlot(gameObject);
       }
     });
   }
 
   createTypesPanel() {
     const { width, height } = this.scale;
-    const types = [
-      "Éclairage 3 points",
-      "Low-key (film noir)",
-      "High-key",
-      "Contre-jour",
-      "Lumière naturelle",
-    ];
+    // Use shuffled order from server if available, fallback to default
+    const types =
+      this.server?.state?.room?.Enigma2?.typesOrder || [
+        "Éclairage 3 points",
+        "Low-key (film noir)",
+        "High-key",
+        "Contre-jour",
+        "Lumière naturelle",
+      ];
 
     const startX = width * 0.75;
     const startY = height / 2 - (types.length * 60) / 2;
@@ -292,7 +472,7 @@ class Enigma2Scene extends Phaser.Scene {
         height - 60,
         buttonWidth,
         buttonHeight,
-        0xaa2222
+        0xaa2222,
       )
       .setStrokeStyle(2, 0xff4444)
       .setInteractive({ useHandCursor: true })
@@ -311,7 +491,7 @@ class Enigma2Scene extends Phaser.Scene {
         height - 60,
         buttonWidth,
         buttonHeight,
-        0x22aa22
+        0x22aa22,
       )
       .setStrokeStyle(2, 0x44ff44)
       .setInteractive({ useHandCursor: true })
@@ -323,9 +503,18 @@ class Enigma2Scene extends Phaser.Scene {
         fontStyle: "bold",
       })
       .setOrigin(0.5);
+
+    // Setup listeners at the end, after all elements are created
+    this.server.listeners.onGameUpdate = this.onGameUpdate.bind(this);
   }
 
   startDrag(type, index, buttonElement) {
+    console.log("startDrag", {
+      type,
+      index,
+      used: this.typeButtons[index].used,
+    });
+    // Don't allow dragging from list if already used - must drag from slot instead
     if (this.typeButtons[index].used) return;
     this.isDragging = true;
     this.draggedType = type;
@@ -335,6 +524,10 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   endDrag(buttonElement, textElement, originalX, originalY) {
+    console.log("endDrag", {
+      isDragging: this.isDragging,
+      draggedType: this.draggedType,
+    });
     buttonElement.x = originalX;
     buttonElement.y = originalY;
     textElement.x = originalX;
@@ -346,89 +539,70 @@ class Enigma2Scene extends Phaser.Scene {
     this.draggedTypeIndex = null;
   }
 
-  assignTypeToSlot(slotIndex) {
-    if (!this.draggedType) return;
-    const slot = this.typeSlots[slotIndex];
+  startDragFromSlot(type, slotIndex, textElement) {
+    console.log("startDragFromSlot", { type, slotIndex });
+    this.isDragging = true;
+    this.draggedFromSlot = true;
+    this.draggedFromSlotIndex = slotIndex;
+    this.draggedType = type;
+    textElement.setAlpha(0.7);
+  }
 
-    // Supprime ancienne assignation
-    if (slot.assignedType !== null) {
-      const oldTypeButton = this.typeButtons.find(
-        (btn) => btn.type === slot.assignedType
-      );
-      if (oldTypeButton) {
-        oldTypeButton.used = false;
-        oldTypeButton.background.setFillStyle(0x444444);
-        oldTypeButton.text.setAlpha(1);
-      }
+  endDragFromSlot(textElement) {
+    console.log("endDragFromSlot", {
+      draggedType: this.draggedType,
+      draggedFromSlotIndex: this.draggedFromSlotIndex,
+    });
+    // Reset position
+    textElement.x = textElement.originalX;
+    textElement.y = textElement.originalY;
+    textElement.setAlpha(1);
+
+    // Clear the original slot if drop didn't happen
+    // (if drop happened, the slot will be updated by server response)
+
+    this.isDragging = false;
+    this.draggedFromSlot = false;
+    this.draggedType = null;
+    this.draggedFromSlotIndex = null;
+  }
+
+  assignTypeToSlot(slotIndex, draggedType) {
+    console.log("assignTypeToSlot", {
+      slotIndex,
+      draggedType,
+      draggedFromSlot: this.draggedFromSlot,
+      draggedFromSlotIndex: this.draggedFromSlotIndex,
+    });
+    if (!draggedType) return;
+
+    // If dragging from another slot, clear the original slot first
+    if (this.draggedFromSlot && this.draggedFromSlotIndex !== null) {
+      // Clear the original slot
+      this.server.enigma2.update(this.draggedFromSlotIndex, "");
     }
 
-    // Nouvelle assignation
-    slot.assignedType = this.draggedType;
-    slot.text.setText(this.draggedType);
-    slot.text.setColor("#ffffff");
-    slot.background.setFillStyle(0x004422);
-
-    const typeButton = this.typeButtons[this.draggedTypeIndex];
-    typeButton.used = true;
-    typeButton.background.setFillStyle(0x666666);
-    typeButton.text.setAlpha(0.6);
-
-    this.draggedType = null;
-    this.draggedTypeIndex = null;
-    this.isDragging = false;
-    this.updateScore();
+    // Emit update to server - UI will update when server confirms
+    this.server.enigma2.update(slotIndex, draggedType);
   }
 
   validateAssignments() {
-    let correctAssignments = 0;
-    this.typeSlots.forEach((slot, index) => {
-      const correctType = this.photoData[index].type;
-      if (slot.assignedType === correctType) {
-        correctAssignments++;
-        slot.background.setFillStyle(0x00aa00);
-      } else {
-        slot.background.setFillStyle(0xaa0000);
-      }
-    });
-
-    this.score = correctAssignments;
-    this.updateScore();
-
-    if (correctAssignments === this.totalPhotos) {
-      this.showMessage(
-        "Parfait ! Toutes les associations sont correctes!",
-        "#00ff00"
-      );
-    } else {
-      this.showMessage(
-        `${correctAssignments}/${this.totalPhotos} correct(es)`,
-        "#ffaa00"
-      );
-    }
+    // Submit to server for validation
+    this.server.enigma2.submit();
   }
 
   resetAssignments() {
-    this.typeSlots.forEach((slot) => {
-      slot.assignedType = null;
-      slot.text.setText("Déposez ici");
-      slot.text.setColor("#999999");
-      slot.background.setFillStyle(0x333333);
-    });
-    this.typeButtons.forEach((typeButton) => {
-      typeButton.used = false;
-      typeButton.background.setFillStyle(0x444444);
-      typeButton.text.setAlpha(1);
-    });
+    // Emit single reset event to server - UI will update when server confirms
+    this.server.enigma2.reset();
+
     this.draggedType = null;
     this.draggedTypeIndex = null;
     this.isDragging = false;
-    this.score = 0;
-    this.updateScore();
   }
 
   updateScore() {
     const count = this.typeSlots.filter(
-      (slot) => slot.assignedType !== null
+      (slot) => slot.assignedType !== null,
     ).length;
     this.scoreText.setText(`Associations: ${count}/${this.totalPhotos}`);
   }

@@ -96,8 +96,22 @@ export default {
         },
       });
 
+      // Shuffle lighting types for Enigma 2
+      const lightingTypes = [
+        "Éclairage 3 points",
+        "Low-key (film noir)",
+        "High-key",
+        "Contre-jour",
+        "Lumière naturelle",
+      ];
+      const shuffledTypes = [...lightingTypes].sort(() => Math.random() - 0.5);
+
       await prisma.enigma2.create({
-        data: { roomId: room.id, photos: [] },
+        data: {
+          roomId: room.id,
+          photos: ["", "", "", "", ""],
+          typesOrder: shuffledTypes,
+        },
       });
 
       await prisma.enigma3.create({

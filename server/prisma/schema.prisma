@@ -77,10 +77,11 @@ model Enigma1 {
 // Feedback pédagogique :
 // "L'éclairage raconte autant que les dialogues. Le 3-point lighting (key + fill + backlight) est la base. Le low-key crée du mystère, le high-key de la légèreté."
 model Enigma2 {
-  roomId    String   @id
-  Room      Room     @relation(fields: [roomId], references: [id])
-  photos    String[]
-  completed Boolean  @default(false)
+  roomId     String   @id
+  Room       Room     @relation(fields: [roomId], references: [id])
+  photos     String[]
+  typesOrder String[] // Shuffled order of lighting types
+  completed  Boolean  @default(false)
 }
 
 // ÉNIGME 3 : Le Casting Narratif

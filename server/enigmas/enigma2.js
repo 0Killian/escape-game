@@ -25,14 +25,19 @@ export default {
         },
       });
 
+      // Ensure photos array has 5 elements
+      const photos = [...room.Enigma2.photos];
+      while (photos.length < 5) {
+        photos.push("");
+      }
+      photos[index] = lighting || "";
+
       room = await prisma.room.update({
         where: { id: room.id },
         data: {
           Enigma2: {
             update: {
-              photos: room.Enigma2.photos.map((photo, i) =>
-                i === index ? lighting : photo,
-              ),
+              photos: photos,
             },
           },
         },
@@ -45,7 +50,46 @@ export default {
         },
       });
 
-      io.to(socketState.room).emit("room:update", { room, event: null });
+      io.to(room.code).emit("game:update", {
+        room,
+        event: { kind: "enigma2:update", data: { index, lighting } },
+      });
+    });
+
+    socket.on("enigma2:reset", async () => {
+      let room = await prisma.room.findUnique({
+        where: { id: socketState.room },
+        include: {
+          players: true,
+          Enigma1: true,
+          Enigma2: true,
+          Enigma3: true,
+          Enigma4: true,
+        },
+      });
+
+      room = await prisma.room.update({
+        where: { id: room.id },
+        data: {
+          Enigma2: {
+            update: {
+              photos: ["", "", "", "", ""],
+            },
+          },
+        },
+        include: {
+          players: true,
+          Enigma1: true,
+          Enigma2: true,
+          Enigma3: true,
+          Enigma4: true,
+        },
+      });
+
+      io.to(room.code).emit("game:update", {
+        room,
+        event: { kind: "enigma2:reset", data: null },
+      });
     });
 
     socket.on("enigma2:submit", async () => {
@@ -60,8 +104,22 @@ export default {
         },
       });
 
-      // TODO: Solution
-      if (false) {
+      // Check if all assignments are correct
+      const correctSolution = [
+        "Éclairage 3 points",
+        "Low-key (film noir)",
+        "High-key",
+        "Contre-jour",
+        "Lumière naturelle",
+      ];
+
+      const isCorrect =
+        room.Enigma2.photos.length === correctSolution.length &&
+        room.Enigma2.photos.every(
+          (photo, index) => photo === correctSolution[index],
+        );
+
+      if (isCorrect) {
         room = await prisma.room.update({
           where: { id: room.id },
           data: {
@@ -81,7 +139,13 @@ export default {
         });
       }
 
-      io.to(room.code).emit("game:update", { room });
+      io.to(room.code).emit("game:update", {
+        room,
+        event: {
+          kind: "enigma2:submit-result",
+          data: { completed: room.Enigma2.completed },
+        },
+      });
     });
   },
 };
