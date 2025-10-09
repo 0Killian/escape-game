@@ -14,6 +14,7 @@ class MainScene extends Phaser.Scene {
       onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onUpdate.bind(this),
       onError: this.onError.bind(this),
+      onGameOver: this.onGameOver.bind(this),
       onNewMessage: this.server.listeners.onNewMessage,
     };
 
@@ -22,6 +23,18 @@ class MainScene extends Phaser.Scene {
     if (this.server.state.self.currentScene !== "main") {
       this.onSceneChanged(this.server, this.server.state.self.currentScene);
     }
+  }
+
+  /**
+   * Handles game over event
+   *
+   * @param {GameServer} _server
+   * @param {string} reason
+   */
+  onGameOver(_server, reason) {
+    this.scale.removeAllListeners("resize");
+    this.input.removeAllListeners("pointerdown");
+    this.scene.start("GameOver", { server: this.server, reason });
   }
 
   /**

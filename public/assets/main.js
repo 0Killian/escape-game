@@ -93,15 +93,24 @@ function createSocket(server) {
   server.socket.on("game:update", ({ room, event }) => {
     console.debug("game:update({ room: ", room, ", event: ", event, " })");
     server.state.room = room;
-    
+
     // Mettre à jour aussi les informations du joueur actuel
     const currentPlayer = room.players.find(p => p.id === server.state.self.id);
     if (currentPlayer) {
       server.state.self = currentPlayer;
     }
-    
+
     if (server.listeners.onGameUpdate) {
       server.listeners.onGameUpdate(server, room, event);
+    }
+  });
+
+  server.socket.on("game:over", ({ room, reason }) => {
+    console.log("Game over:", reason);
+    server.state.room = room;
+
+    if (server.listeners.onGameOver) {
+      server.listeners.onGameOver(server, reason);
     }
   });
 
@@ -255,7 +264,7 @@ function startGame(server, startScene = "Main") {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene, Enigma4Scene],
+    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene, Enigma4Scene, GameOverScene],
   };
 
   const game = new Phaser.Game(config);

@@ -82,6 +82,7 @@ class Enigma3Scene extends Phaser.Scene {
       onNewMessage: this.server.listeners.onNewMessage,
       onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onGameUpdate.bind(this),
+      onGameOver: this.onGameOver.bind(this),
     };
 
     // Charger l'état actuel si disponible
@@ -95,6 +96,24 @@ class Enigma3Scene extends Phaser.Scene {
         });
       }
     }
+  }
+
+  /**
+   * Handles game over event
+   *
+   * @param {GameServer} _server
+   * @param {string} reason
+   */
+  onGameOver(_server, reason) {
+    this.scale.removeAllListeners("resize");
+    this.input.removeAllListeners("drop");
+    this.input.removeAllListeners("dragstart");
+    this.input.removeAllListeners("drag");
+    this.input.removeAllListeners("dragend");
+    this.input.removeAllListeners("dragenter");
+    this.input.removeAllListeners("dragleave");
+    this.input.removeAllListeners("pointerdown");
+    this.scene.start("GameOver", { server: this.server, reason });
   }
 
   preload() {

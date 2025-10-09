@@ -210,6 +210,32 @@ export default {
             Enigma4: true,
           },
         });
+      } else if (!room.timerStopped && room.timer === 0) {
+        // Game over - time's up
+        room = await prisma.room.update({
+          where: {
+            id: socketState.room,
+          },
+          data: {
+            timerStopped: true,
+          },
+          include: {
+            players: true,
+            Enigma1: true,
+            Enigma2: true,
+            Enigma3: true,
+            Enigma4: true,
+          },
+        });
+
+        logger.info(
+          `Game over for room ${room.code} - time's up`,
+        );
+
+        io.to(room.code).emit("game:over", {
+          room,
+          reason: "timeout",
+        });
       }
 
       io.to(room.code).emit("game:update", {
@@ -217,7 +243,10 @@ export default {
         event: { kind: "game:timer", data: {} },
       });
 
-      setTimeout(update, 1000);
+      // Only continue the timer loop if the room still exists and game isn't over
+      if (!room.timerStopped || room.timer > 0) {
+        setTimeout(update, 1000);
+      }
     }
 
     enigma1.registerSocketListeners(io, logger, prisma, socket, socketState);

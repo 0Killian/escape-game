@@ -18,7 +18,22 @@ class Enigma1Scene extends Phaser.Scene {
       onNewMessage: this.server.listeners.onNewMessage,
       onSceneChanged: this.onSceneChanged.bind(this),
       onGameUpdate: this.onGameUpdate.bind(this),
+      onGameOver: this.onGameOver.bind(this),
     };
+  }
+
+  /**
+   * Handles game over event
+   *
+   * @param {GameServer} _server
+   * @param {string} reason
+   */
+  onGameOver(_server, reason) {
+    this.scale.removeAllListeners("resize");
+    this.input.removeAllListeners("drag");
+    this.input.removeAllListeners("dragend");
+    this.input.removeAllListeners("pointerdown");
+    this.scene.start("GameOver", { server: this.server, reason });
   }
 
   preload() {
