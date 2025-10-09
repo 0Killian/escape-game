@@ -62,13 +62,13 @@ export default {
         },
       });
 
-      // Solution correcte selon les archétypes narratifs du Titanic
-      // Index 0: Héros -> Jack (jack)
-      // Index 1: Mentor -> Molly Brown (molly)
-      // Index 2: Gardien du seuil -> Caledon Hockley (caledon)
-      // Index 3: Allié -> Fabrizio (fabrizio)
-      // Index 4: Ombre -> Rose (rose) - Shapeshifter
-      // Index 5: Trickster -> Spicer Lovejoy (lovejoy)
+  // Solution correcte selon les archétypes narratifs du Titanic
+  // Index 0: Héros -> Jack (jack)
+  // Index 1: Mentor -> Molly Brown (molly)
+  // Index 2: Antagoniste -> Caledon Hockley (caledon)
+  // Index 3: Allié -> Fabrizio (fabrizio)
+  // Index 4: Héroïne -> Rose (rose)
+  // Index 5: Sbire -> Spicer Lovejoy (lovejoy)
       const correctSolution = ["jack", "molly", "caledon", "fabrizio", "rose", "lovejoy"];
       
       const isCorrect = room.Enigma3.roles.every((role, index) => role === correctSolution[index]);

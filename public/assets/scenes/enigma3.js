@@ -9,52 +9,53 @@ class Enigma3Scene extends Phaser.Scene {
         file: "Rose_Bukater.jpg",
         name: "Rose Bukater",
         description:
-          "Jeune femme de la haute société, prisonnière de son destin. Elle change de position et d'identité au fil de l'histoire : de victime enfermée à femme libre. Son ambivalence initiale crée le doute (alliée ou obstacle ?) avant sa métamorphose complète.",
+          "Héroïne. Jeune femme de la haute société, enfermée par les conventions et promise à un mariage de façade. Sa rencontre avec Jack déclenche un véritable arc de transformation : elle affirme sa volonté, choisit la liberté et agit avec courage face au naufrage.",
       },
       {
         key: "caledon",
         file: "Caledon Hockley.jpg",
         name: "Caledon Hockley",
         description:
-          "Fiancé de Rose, homme d'affaires fortuné et représentant des conventions sociales. Il défend l'ordre établi et la rigidité de classe, empêchant la transgression initiale. Il teste la détermination de ceux qui veulent franchir les barrières sociales.",
+          "Antagoniste. Fiancé de Rose, riche, contrôlant et possessif. Il incarne la violence symbolique de la classe sociale et s'oppose directement à l'amour de Jack et Rose. Il manipule, menace et déclenche les poursuites lors du naufrage.",
       },
       {
         key: "fabrizio",
         file: "Fabrizio.jpg",
         name: "Fabrizio",
         description:
-          "Compagnon fidèle de Jack, ami italien plein de vie. Il soutient le protagoniste dans les moments clés et partage son humanité, son humour et sa loyauté. Sa présence offre un soutien moral constant dans l'aventure.",
+          "Allié. Compagnon fidèle de Jack, ami italien plein de vie. Il apporte humour, chaleur et loyauté, et soutient Jack dans les passages décisifs, jusqu'au chaos final.",
       },
       {
         key: "molly",
         file: "Molly brown.jpg",
         name: "Molly Brown",
         description:
-          "Femme indépendante et bienveillante, elle soutient Jack et Rose contre les barrières sociales. Elle transmet courage et lucidité, guide pragmatique qui aide les protagonistes à voir plus clair dans leur situation.",
+          "Mentor. Femme indépendante et bienveillante. Elle voit au-delà des classes, aide Jack à s'intégrer au dîner des premières, encourage Rose à s'affirmer et tente d'organiser l'entraide dans les canots.",
       },
       {
         key: "lovejoy",
         file: "Spicer Lovejoy.jpg",
         name: "Spicer Lovejoy",
         description:
-          "Valet de Caledon, personnage manipulateur et cynique. Il introduit la ruse et la surveillance, brouillant les pistes et créant des obstacles par des moyens détournés. Moteur de tension dramatique par ses actions sournoises et imprévisibles.",
+          "Sbire. Homme de main de Caledon, froid et méthodique. Il espionne Jack et Rose, tend des pièges et exécute les basses œuvres de son maître, renforçant l'obstacle imposé par l'antagoniste.",
       },
       {
         key: "jack",
         file: "téléchargé.jpg",
         name: "Jack Dawson",
         description:
-          "Jeune homme sans fortune, animé par la liberté et la passion. Personnage principal qui traverse l'épreuve du voyage, de l'amour impossible et du sacrifice. Il incarne le mouvement, le risque, et la transformation de soi face à l'adversité.",
+          "Héros. Jeune homme sans fortune, animé par la liberté, l'audace et la générosité. Il provoque la rencontre, prend des risques, protège Rose et se sacrifie par amour.",
       },
     ];
 
+    // Rôles narratifs adaptés à Titanic (l'ordre sert d'indice côté serveur)
     this.roles = [
-      "Héros",
-      "Mentor",
-      "Gardien du seuil",
-      "Allié",
-      "Shapeshifter",
-      "Trickster",
+      "Héros",        // Jack
+      "Mentor",       // Molly Brown
+      "Antagoniste",  // Caledon Hockley
+      "Allié",        // Fabrizio
+      "Héroïne",      // Rose
+      "Sbire",        // Spicer Lovejoy
     ];
 
     // Map pour stocker les associations personnage -> rôle
@@ -84,8 +85,8 @@ class Enigma3Scene extends Phaser.Scene {
     };
 
     // Charger l'état actuel si disponible
-    if (server.state.room && server.state.room.enigma3) {
-      const savedRoles = server.state.room.enigma3.roles;
+    if (server.state.room && server.state.room.Enigma3) {
+      const savedRoles = server.state.room.Enigma3.roles;
       if (savedRoles && savedRoles.length === 6) {
         savedRoles.forEach((role, index) => {
           if (role) {
@@ -158,8 +159,8 @@ class Enigma3Scene extends Phaser.Scene {
     this.updateTimer(room.timer);
 
     // Mettre à jour les assignations depuis le serveur
-    if (room.enigma3 && room.enigma3.roles) {
-      room.enigma3.roles.forEach((characterKey, roleIndex) => {
+    if (room.Enigma3 && room.Enigma3.roles) {
+      room.Enigma3.roles.forEach((characterKey, roleIndex) => {
         if (characterKey) {
           // Trouver le personnage qui avait ce rôle et le retirer
           Object.keys(this.assignments).forEach((key) => {
@@ -181,7 +182,7 @@ class Enigma3Scene extends Phaser.Scene {
     }
 
     // Gérer la réponse de soumission
-    if (room.enigma3 && room.enigma3.completed) {
+    if (room.Enigma3 && room.Enigma3.completed) {
       this.showMessage(
         "🎉 Bravo ! Vous avez correctement identifié tous les archétypes narratifs !\n\nLa plupart des histoires suivent des structures universelles.",
         "#00FF00"
@@ -194,7 +195,7 @@ class Enigma3Scene extends Phaser.Scene {
     } else if (
       event &&
       event.kind === "enigma3:submit-result" &&
-      !room.enigma3.completed
+      !(room.Enigma3 && room.Enigma3.completed)
     ) {
       this.showMessage(
         "❌ Ce n'est pas tout à fait ça. Réessayez !",
