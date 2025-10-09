@@ -20,6 +20,7 @@ class Enigma1Scene extends Phaser.Scene {
   }
 
   preload() {
+    this.load.image("background", "assets/images/Montage.png");
     this.keys.forEach((key) =>
       this.load.image(key, "assets/images/storyboard/" + key + ".png"),
     );
@@ -143,6 +144,26 @@ class Enigma1Scene extends Phaser.Scene {
     const screenWidth = this.cameras.main.width;
     const screenHeight = this.cameras.main.height;
     
+    // Ajouter l'image de fond
+    const background = this.add.image(screenWidth / 2, screenHeight / 2, "background");
+    
+    // Ajuster la taille du fond pour couvrir tout l'écran
+    const scaleX = screenWidth / background.width;
+    const scaleY = screenHeight / background.height;
+    const scale = Math.max(scaleX, scaleY);
+    background.setScale(scale);
+    
+    // Overlay semi-transparent pour améliorer la lisibilité
+    const overlay = this.add.rectangle(
+      0,
+      0,
+      screenWidth,
+      screenHeight,
+      0x000000,
+      0.3
+    );
+    overlay.setOrigin(0, 0);
+    
     // Ajouter la description en haut
     const descriptionText = this.add.text(
       screenWidth / 2,
@@ -187,7 +208,17 @@ class Enigma1Scene extends Phaser.Scene {
     const totalHeight = rows * imageHeight + (rows - 1) * spacingY;
     const descriptionHeight = 80; // Espace pour la description
     const startX = (screenWidth - totalWidth) / 2 + imageWidth / 2;
-    const startY = descriptionHeight + 30 + imageHeight / 2; // Position fixe plus haute
+    
+    // Centrer verticalement : si une seule ligne, utiliser le centre de l'écran
+    let startY;
+    if (rows === 1) {
+      // Centrer verticalement en tenant compte de la description et du bouton
+      const availableHeight = screenHeight - descriptionHeight - 120; // 120 pour le bouton en bas
+      startY = descriptionHeight + (availableHeight - imageHeight) / 2 + imageHeight / 2;
+    } else {
+      // Position fixe plus haute pour 2 rangées
+      startY = descriptionHeight + 30 + imageHeight / 2;
+    }
 
     // Créer les slots et les numéros
     for (let i = 0; i < numImages; i++) {

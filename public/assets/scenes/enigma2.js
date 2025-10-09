@@ -34,6 +34,13 @@ class Enigma2Scene extends Phaser.Scene {
     console.log("Enigma2: Scene changed to:", scene);
     
     if (scene !== "enigma2") {
+      this.scale.removeAllListeners("resize");
+      this.input.removeAllListeners("drop");
+      this.input.removeAllListeners("dragstart");
+      this.input.removeAllListeners("drag");
+      this.input.removeAllListeners("dragend");
+      this.input.removeAllListeners("pointerdown");
+      
       const sceneMap = {
         "main": "Main",
         "enigma1": "Enigma1",
@@ -47,18 +54,6 @@ class Enigma2Scene extends Phaser.Scene {
       console.log("Enigma2: Starting scene:", sceneKey);
       this.scene.start(sceneKey, this.server);
     }
-  }
-
-  /**
-   * Update the scene with the new game state.
-   *
-   * @param {GameServer} server - The server instance.
-   * @param {Room} room - The room instance.
-   * @param {GameEvent} event - The game event.
-   */
-  onGameUpdate(server, room, event) {
-    // Toujours mettre à jour le timer
-    this.updateTimer(room.timer);
   }
 
   /**
@@ -84,43 +79,6 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   /**
-   * Initialize the scene with the server instance.
-   * @param {GameServer} server - The server instance.
-   */
-  init(server) {
-    this.server = server;
-    this.server.listeners = {
-      onNewMessage: this.server.listeners.onNewMessage,
-      onError: this.onError.bind(this),
-      onSceneChanged: this.onSceneChanged.bind(this),
-    };
-  }
-
-  /**
-   * Handles error messages from the server.
-   * @param {string} message - The error message.
-   */
-  onError(message) {
-    console.error("Error:", message);
-  }
-
-  /**
-   * Changes the scene to the next scene.
-   *
-   * @param {GameServer} server - The server instance.
-   * @param {string} scene - The name of the next scene.
-   */
-  onSceneChanged(server, scene) {
-    this.scale.removeAllListeners("resize");
-    this.input.removeAllListeners("drop");
-    this.input.removeAllListeners("dragstart");
-    this.input.removeAllListeners("drag");
-    this.input.removeAllListeners("dragend");
-    this.input.removeAllListeners("pointerdown");
-    this.scene.start(this.getSceneKey(scene));
-  }
-
-  /**
    * Update the scene with the new game state.
    *
    * @param {GameServer} server - The server instance.
@@ -128,6 +86,9 @@ class Enigma2Scene extends Phaser.Scene {
    * @param {GameEvent} event - The game event.
    */
   onGameUpdate(server, room, event) {
+    // Toujours mettre à jour le timer
+    this.updateTimer(room.timer);
+    
     console.log("onGameUpdate", { event, room });
     switch (event.kind) {
       case "enigma2:update":
