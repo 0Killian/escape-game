@@ -200,6 +200,106 @@
                 </button>
             </form>
         </div>
+
+        <!-- Modale EXIT - Félicitations -->
+        <div
+            id="exitModal"
+            class="hidden fixed inset-0 bg-black/80 z-[1003] flex items-center justify-center p-4"
+        >
+            <div
+                class="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-[20px] border-[4px] border-[#ffcc00] max-w-[600px] w-full max-h-[90vh] overflow-y-auto"
+                style="
+                    box-shadow:
+                        0 10px 0 #cc9900,
+                        0 15px 40px rgba(255, 204, 0, 0.5);
+                "
+            >
+                <div
+                    class="bg-gradient-to-r from-[#ffcc00] to-[#ff9900] px-6 py-4 text-center border-b-[3px] border-white"
+                >
+                    <h2
+                        class="text-black text-2xl font-extrabold uppercase tracking-wider"
+                    >
+                        🎬 Félicitations! 🎬
+                    </h2>
+                </div>
+
+                <div class="p-6 text-white space-y-4">
+                    <p class="text-lg font-bold text-[#ffcc00] text-center">
+                        Vous avez résolu toutes les énigmes!
+                    </p>
+
+                    <p class="text-base leading-relaxed">
+                        Vous venez de découvrir les fondamentaux de la
+                        réalisation cinématographique. Chaque énigme que vous
+                        avez résolue représente un pilier essentiel de la
+                        création d'un film:
+                    </p>
+
+                    <div class="space-y-3">
+                        <div class="bg-[#0f0f1e] p-4 rounded-lg border-l-4 border-[#ffcc00]">
+                            <h3 class="font-bold text-[#ffcc00] mb-2">
+                                📋 Le Storyboard
+                            </h3>
+                            <p class="text-sm">
+                                C'est la vision du réalisateur, le plan qui
+                                guide chaque plan du film. Sans storyboard, un
+                                film manque de cohérence narrative et de
+                                direction artistique.
+                            </p>
+                        </div>
+
+                        <div class="bg-[#0f0f1e] p-4 rounded-lg border-l-4 border-[#ffcc00]">
+                            <h3 class="font-bold text-[#ffcc00] mb-2">
+                                💡 L'Éclairage
+                            </h3>
+                            <p class="text-sm">
+                                La lumière crée l'atmosphère, guide l'émotion
+                                et révèle la beauté de chaque plan. C'est elle
+                                qui transforme une scène ordinaire en moment
+                                cinématographique mémorable.
+                            </p>
+                        </div>
+
+                        <div class="bg-[#0f0f1e] p-4 rounded-lg border-l-4 border-[#ffcc00]">
+                            <h3 class="font-bold text-[#ffcc00] mb-2">
+                                🎭 Le Casting
+                            </h3>
+                            <p class="text-sm">
+                                Les acteurs donnent vie aux personnages. Le bon
+                                casting peut faire la différence entre un film
+                                ordinaire et un chef-d'œuvre inoubliable.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="text-base leading-relaxed pt-2">
+                        Ensemble, ces éléments forment la base de tout grand
+                        film. Vous avez démontré votre compréhension de ces
+                        concepts essentiels. Vous êtes maintenant prêts à créer
+                        votre propre chef-d'œuvre!
+                    </p>
+
+                    <div class="flex justify-center pt-4">
+                        <button
+                            onclick="document.getElementById('exitModal').style.display='none'"
+                            class="bg-gradient-to-br from-[#ffcc00] to-[#ff9900] text-black px-6 py-3 rounded-lg font-bold uppercase tracking-wide border-[3px] border-white transition-all duration-150"
+                            style="
+                                box-shadow:
+                                    0 6px 0 #cc7700,
+                                    0 8px 15px rgba(0, 0, 0, 0.4);
+                            "
+                            onmouseover="this.style.transform='translateY(2px)'; this.style.boxShadow='0 4px 0 #cc7700, 0 6px 12px rgba(0, 0, 0, 0.4)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 0 #cc7700, 0 8px 15px rgba(0, 0, 0, 0.4)';"
+                            onmousedown="this.style.transform='translateY(4px)'; this.style.boxShadow='0 2px 0 #cc7700, 0 4px 8px rgba(0, 0, 0, 0.4)';"
+                        >
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
         <script src="/assets/scenes/main.js"></script>
         <script src="/assets/scenes/enigma1.js"></script>

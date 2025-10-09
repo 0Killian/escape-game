@@ -245,16 +245,6 @@ const listeners = {
     };
 
     console.log(server.state.room);
-
-    // Si le jeu a déjà commencé (reconnexion après rechargement), démarrer le jeu
-    if (server.state.room.started) {
-      document.getElementById("waiting-room").style.display = "none";
-      
-      // Démarrer le jeu - MainScene.init() gérera la redirection vers la scène actuelle
-      startGame(server);
-      
-      updateBackButton(server);
-    }
   },
 };
 
@@ -268,6 +258,8 @@ function updateBackButton(server) {
   if (!backBtn) return;
 
   // Retirer les anciens listeners pour éviter les doublons
+  /** @type {HTMLButtonElement} */
+  // @ts-ignore
   const newBtn = backBtn.cloneNode(true);
   backBtn.parentNode.replaceChild(newBtn, backBtn);
   const newBtnEl = /** @type {HTMLElement} */ (newBtn);

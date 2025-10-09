@@ -15,7 +15,8 @@ model Room {
   updatedAt    DateTime  @updatedAt
   players      Player[]
   messages     Message[]
-  timer        Int       @default(2700) // 45 minutes in seconds
+  timer        Int       @default(600) // 10 minutes in seconds
+  timerStopped Boolean   @default(false)
   started      Boolean   @default(false)
   Enigma1      Enigma1?
   Enigma2      Enigma2?

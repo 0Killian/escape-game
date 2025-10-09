@@ -31,8 +31,6 @@ class Enigma2Scene extends Phaser.Scene {
    * @param {string} scene
    */
   onSceneChanged(_server, scene) {
-    console.log("Enigma2: Scene changed to:", scene);
-
     if (scene !== "enigma2") {
       this.scale.removeAllListeners("resize");
       this.input.removeAllListeners("drop");
@@ -51,7 +49,6 @@ class Enigma2Scene extends Phaser.Scene {
       };
 
       const sceneKey = sceneMap[scene] || "Main";
-      console.log("Enigma2: Starting scene:", sceneKey);
       this.scene.start(sceneKey, this.server);
     }
   }
@@ -66,7 +63,7 @@ class Enigma2Scene extends Phaser.Scene {
       const minutes = Math.floor(seconds / 60);
       const secs = seconds % 60;
       this.timerText.setText(
-        `⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`
+        `⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`,
       );
     }
   }
@@ -83,15 +80,14 @@ class Enigma2Scene extends Phaser.Scene {
   /**
    * Update the scene with the new game state.
    *
-   * @param {GameServer} server - The server instance.
+   * @param {GameServer} _server - The server instance.
    * @param {Room} room - The room instance.
    * @param {GameEvent} event - The game event.
    */
-  onGameUpdate(server, room, event) {
+  onGameUpdate(_server, room, event) {
     // Toujours mettre à jour le timer
     this.updateTimer(room.timer);
 
-    console.log("onGameUpdate", { event, room });
     switch (event.kind) {
       case "enigma2:update":
       case "enigma2:reset":
@@ -100,7 +96,7 @@ class Enigma2Scene extends Phaser.Scene {
         break;
 
       case "enigma2:submit-result":
-        if (event.data.completed) {
+        if ("completed" in event.data && event.data.completed) {
           this.showSuccessModal();
         } else {
           this.showMessage(
@@ -121,7 +117,6 @@ class Enigma2Scene extends Phaser.Scene {
    * @param {Array<string>} photos - The photos array from server state
    */
   updateUIFromServerState(photos) {
-    console.log("updateUIFromServerState", { photos });
     // Reset all UI elements first
     this.typeSlots.forEach((slot, index) => {
       const assignedType = photos[index];
@@ -375,14 +370,13 @@ class Enigma2Scene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       // Store original position for drag operations
-      slotText.originalX = x + photoWidth / 2;
-      slotText.originalY = y + photoHeight + 25;
-      slotText.slotIndex = index;
+      slotText.setOrigin(x + photoWidth / 2, y + photoHeight + 25);
+      slotText.setData("slotIndex", index);
 
       const slotZone = this.add
         .zone(x + photoWidth / 2, y + photoHeight + 25, photoWidth, slotHeight)
         .setRectangleDropZone(photoWidth, slotHeight);
-      slotZone.slotIndex = index;
+      slotZone.setData("slotIndex", index);
 
       this.typeSlots.push({
         background: slotBg,
@@ -471,23 +465,43 @@ class Enigma2Scene extends Phaser.Scene {
             gameObject
           );
         }
-      }
-    });
+      },
+    );
 
-    this.input.on("drag", (pointer, gameObject, dragX, dragY) => {
-      // Check if this is a slot text being dragged
-      if (gameObject.slotIndex !== undefined && this.draggedFromSlot) {
-        gameObject.x = dragX;
-        gameObject.y = dragY;
-      }
-    });
+    this.input.on(
+      "drag",
+      (
+        /** @type {Phaser.Input.Pointer} */ _pointer,
+        /** @type {Phaser.GameObjects.Rectangle} */ gameObject,
+        /** @type {number} */ dragX,
+        /** @type {number} */ dragY,
+      ) => {
+        // Check if this is a slot text being dragged
+        if (
+          gameObject.getData("slotIndex") !== undefined &&
+          this.draggedFromSlot
+        ) {
+          gameObject.x = dragX;
+          gameObject.y = dragY;
+        }
+      },
+    );
 
-    this.input.on("dragend", (pointer, gameObject) => {
-      // Check if this is a slot text being dragged
-      if (gameObject.slotIndex !== undefined && this.draggedFromSlot) {
-        this.endDragFromSlot(gameObject);
-      }
-    });
+    this.input.on(
+      "dragend",
+      (
+        /** @type {Phaser.Input.Pointer} */ _pointer,
+        /** @type {Phaser.GameObjects.GameObject} */ gameObject,
+      ) => {
+        // Check if this is a slot text being dragged
+        if (
+          gameObject.getData("slotIndex") !== undefined &&
+          this.draggedFromSlot
+        ) {
+          this.endDragFromSlot(gameObject);
+        }
+      },
+    );
   }
 
   createTypesPanel() {
@@ -909,7 +923,6 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   startDragFromSlot(type, slotIndex, textElement) {
-    console.log("startDragFromSlot", { type, slotIndex });
     this.isDragging = true;
     this.draggedFromSlot = true;
     this.draggedFromSlotIndex = slotIndex;
@@ -918,10 +931,6 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   endDragFromSlot(textElement) {
-    console.log("endDragFromSlot", {
-      draggedType: this.draggedType,
-      draggedFromSlotIndex: this.draggedFromSlotIndex,
-    });
     // Reset position
     textElement.x = textElement.originalX;
     textElement.y = textElement.originalY;
@@ -937,12 +946,6 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   assignTypeToSlot(slotIndex, draggedType) {
-    console.log("assignTypeToSlot", {
-      slotIndex,
-      draggedType,
-      draggedFromSlot: this.draggedFromSlot,
-      draggedFromSlotIndex: this.draggedFromSlotIndex,
-    });
     if (!draggedType) return;
 
     // If dragging from another slot, clear the original slot first

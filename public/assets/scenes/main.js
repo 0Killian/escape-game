@@ -18,6 +18,7 @@ class MainScene extends Phaser.Scene {
     };
 
     // Si le joueur n'est pas sur la scène "main", le rediriger vers sa scène actuelle
+    console.log("Current scene:", this.server.state.self.currentScene);
     if (this.server.state.self.currentScene !== "main") {
       this.onSceneChanged(this.server, this.server.state.self.currentScene);
     }
@@ -49,13 +50,27 @@ class MainScene extends Phaser.Scene {
    *
    * @param {GameServer} server
    * @param {Room} room
+   * @param {GameEvent} event
    */
-  onUpdate(server, room) {
+  onUpdate(server, room, event) {
     // Mettre à jour l'état de la room dans le serveur
     server.state.room = room;
-    
-    this.updateTimer(room.timer);
-    this.updateDoors(room);
+
+    // Only update what's necessary based on the event
+    switch (event.kind) {
+      case "game:timer":
+        this.updateTimer(room.timer);
+        break;
+      case "enigma1:submit":
+      case "enigma2:submit-result":
+      case "enigma3:submit-result":
+        // Update doors when enigmas are completed
+        this.updateDoors(room);
+        break;
+      default:
+        // For any other event, do nothing
+        break;
+    }
   }
 
   /**
@@ -67,7 +82,9 @@ class MainScene extends Phaser.Scene {
     if (this.timerText) {
       const minutes = Math.floor(seconds / 60);
       const secs = seconds % 60;
-      this.timerText.setText(`⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`);
+      this.timerText.setText(
+        `⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`,
+      );
     }
   }
 
@@ -77,7 +94,15 @@ class MainScene extends Phaser.Scene {
    * @param {Room} room
    */
   updateDoors(room) {
-    // TODO: Mettre à jour les portes selon l'état des énigmes
+    // Update EXIT door if all enigmas are completed
+    if (this.exitDoor) {
+      const allCompleted =
+        room.Enigma1.completed &&
+        room.Enigma2.completed &&
+        room.Enigma3.completed;
+      const doorImgType = allCompleted ? "door-green" : "door-red";
+      this.exitDoor.img.setTexture(doorImgType);
+    }
   }
 
   preload() {
@@ -128,7 +153,7 @@ class MainScene extends Phaser.Scene {
 
     const doorFloorY = hallwayBottom - hallwayBottom * 0.03; // Anchor doors to hallway floor
 
-    // Les 4 portes d'énigmes - positioned relative to hallway
+    // Les 3 portes d'énigmes + 1 porte EXIT - positioned relative to hallway
     const doors = [
       {
         x: this.scale.width * (1 / 8),
@@ -154,9 +179,10 @@ class MainScene extends Phaser.Scene {
       {
         x: this.scale.width * (7 / 8),
         y: doorFloorY,
-        label: "Bande-son",
-        scene: "Enigma4",
-        key: "enigma4",
+        label: "EXIT",
+        scene: null,
+        key: "exit",
+        isExit: true,
       },
     ];
 
@@ -164,14 +190,49 @@ class MainScene extends Phaser.Scene {
       const container = this.add.container(door.x, door.y);
 
       // Porte (verte si complétée, rouge sinon)
-      const doorImgType = this.server.state.room[door.scene].completed
-        ? "door-green"
-        : "door-red";
+      let doorImgType;
+      let clickHandler;
+
+      if (door.isExit) {
+        // EXIT door: check if all enigmas are completed
+        const allCompleted =
+          this.server.state.room.Enigma1.completed &&
+          this.server.state.room.Enigma2.completed &&
+          this.server.state.room.Enigma3.completed;
+        doorImgType = allCompleted ? "door-green" : "door-red";
+
+        clickHandler = () => {
+          // Re-check completion status at click time
+          const currentlyCompleted =
+            this.server.state.room.Enigma1.completed &&
+            this.server.state.room.Enigma2.completed &&
+            this.server.state.room.Enigma3.completed;
+
+          if (currentlyCompleted) {
+            this.showCongratulatoryModal();
+          }
+        };
+      } else {
+        // Regular enigma door
+        doorImgType = this.server.state.room[door.scene].completed
+          ? "door-green"
+          : "door-red";
+
+        clickHandler = () => {
+          this.server.changeScene(door.key);
+        };
+      }
+
       const doorImg = this.add
         .image(0, 0, doorImgType)
         .setDisplaySize(doorScaledWidth, doorScaledHeight)
         .setOrigin(0.5, 1);
       doorImg.setInteractive({ useHandCursor: true });
+
+      // Store reference to door for updates
+      if (door.isExit) {
+        this.exitDoor = { img: doorImg, door };
+      }
 
       // Label (position relative to door size)
       const labelOffsetY = -(doorScaledHeight * 2.5) / 2;
@@ -188,9 +249,7 @@ class MainScene extends Phaser.Scene {
       container.add([doorImg, label]);
 
       // Click handler
-      doorImg.on("pointerdown", () => {
-        this.server.changeScene(door.key);
-      });
+      doorImg.on("pointerdown", clickHandler);
     });
 
     // Titre et sous-titre (en dehors de la boucle)
@@ -243,5 +302,15 @@ class MainScene extends Phaser.Scene {
       enigma4: "Enigma4",
     };
     return mapping[scene] || "Main";
+  }
+
+  /**
+   * Shows the congratulatory modal when all enigmas are completed
+   */
+  showCongratulatoryModal() {
+    const modal = document.getElementById("exitModal");
+    if (modal) {
+      modal.style.display = "flex";
+    }
   }
 }

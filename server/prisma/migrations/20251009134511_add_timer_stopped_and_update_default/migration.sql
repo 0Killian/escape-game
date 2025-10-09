@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Room" ADD COLUMN     "timerStopped" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "timer" SET DEFAULT 600;

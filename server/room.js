@@ -398,6 +398,13 @@ export default {
                 Enigma4: true,
               },
             });
+
+            for (const player of room.players) {
+              if (player.connected) {
+                return;
+              }
+            }
+
             await prisma.enigma1.delete({ where: { roomId: room.id } });
             await prisma.enigma2.delete({ where: { roomId: room.id } });
             await prisma.enigma3.delete({ where: { roomId: room.id } });

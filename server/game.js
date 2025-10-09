@@ -150,14 +150,10 @@ export default {
     });
 
     async function update() {
-      const room = await prisma.room.update({
+      // Fetch current room state
+      let room = await prisma.room.findUnique({
         where: {
           id: socketState.room,
-        },
-        data: {
-          timer: {
-            decrement: 1,
-          },
         },
         include: {
           players: true,
@@ -167,6 +163,54 @@ export default {
           Enigma4: true,
         },
       });
+
+      // Check if timer should be stopped (all enigmas completed)
+      const allCompleted =
+        room.Enigma1.completed &&
+        room.Enigma2.completed &&
+        room.Enigma3.completed;
+
+      if (allCompleted && !room.timerStopped) {
+        // Stop the timer by setting timerStopped flag
+        room = await prisma.room.update({
+          where: {
+            id: socketState.room,
+          },
+          data: {
+            timerStopped: true,
+          },
+          include: {
+            players: true,
+            Enigma1: true,
+            Enigma2: true,
+            Enigma3: true,
+            Enigma4: true,
+          },
+        });
+
+        logger.info(
+          `Timer stopped for room ${room.code} - all enigmas completed`,
+        );
+      } else if (!room.timerStopped && room.timer > 0) {
+        // Continue decrementing timer if not stopped and time remaining
+        room = await prisma.room.update({
+          where: {
+            id: socketState.room,
+          },
+          data: {
+            timer: {
+              decrement: 1,
+            },
+          },
+          include: {
+            players: true,
+            Enigma1: true,
+            Enigma2: true,
+            Enigma3: true,
+            Enigma4: true,
+          },
+        });
+      }
 
       io.to(room.code).emit("game:update", {
         room,
