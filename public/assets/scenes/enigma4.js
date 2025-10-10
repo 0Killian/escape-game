@@ -128,12 +128,15 @@ class Enigma4Scene extends Phaser.Scene {
     // Timer en haut à droite
     this.timerText = this.add
       .text(screenWidth - 20, 20, "", {
-        fontSize: "24px",
-        color: "#ffffff",
-        backgroundColor: "#000000",
-        padding: { x: 10, y: 5 },
+        fontSize: "32px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 4,
       })
-      .setOrigin(1, 0);
+      .setOrigin(1, 0)
+      .setDepth(102);
 
     // Initialiser le timer avec la valeur actuelle
     if (this.server.state.room) {

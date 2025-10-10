@@ -60,7 +60,7 @@ function bindChatUI(server) {
   const chatForm = document.getElementById("chatForm");
   const chatModal = document.getElementById("chatModal");
   const chatInput = document.getElementById("chatInput");
-  
+
   // Ensure the modal can receive focus and trap interaction
   if (chatModal && !chatModal.hasAttribute("tabindex")) {
     chatModal.setAttribute("tabindex", "-1");
@@ -90,7 +90,15 @@ function bindChatUI(server) {
     e.stopPropagation();
   };
   if (chatModal && !chatModal.dataset.eventsBound) {
-    ["pointerdown","pointerup","click","mousedown","mouseup","touchstart","touchend"].forEach((t) => {
+    [
+      "pointerdown",
+      "pointerup",
+      "click",
+      "mousedown",
+      "mouseup",
+      "touchstart",
+      "touchend",
+    ].forEach((t) => {
       // only bubble phase: allow the event to hit the controls inside the modal first
       chatModal.addEventListener(t, stopEvents, false);
     });
@@ -111,7 +119,9 @@ function bindChatUI(server) {
       if (chatModal) {
         chatModal.style.display = "flex";
         // show and focus modal, ensure it captures keyboard focus
-        try { chatModal.focus({ preventScroll: true }); } catch {}
+        try {
+          chatModal.focus({ preventScroll: true });
+        } catch {}
       }
       if (backdrop) backdrop.style.display = "block";
       chatOpen = true;
@@ -176,6 +186,7 @@ const listeners = {
   onJoined: (server) => {
     renderPlayers(server.state.room.players);
     updateStatus(server);
+    updateBackButton(server);
   },
   onPlayerLeft: (server) => {
     renderPlayers(server.state.room.players);
@@ -187,6 +198,7 @@ const listeners = {
   onReconnected: (server) => {
     renderPlayers(server.state.room.players);
     updateStatus(server);
+    updateBackButton(server);
   },
   onDisconnected: (server) => {
     renderPlayers(server.state.room.players);
@@ -237,6 +249,7 @@ const listeners = {
     bindChatUI(server);
     renderPlayers(server.state.room.players);
     updateStatus(server);
+    updateBackButton(server);
 
     document.getElementById("code-display").textContent = roomCode;
 
@@ -257,51 +270,50 @@ function updateBackButton(server) {
   const backBtn = document.getElementById("backToMenuBtn");
   if (!backBtn) return;
 
-  // Retirer les anciens listeners pour éviter les doublons
-  /** @type {HTMLButtonElement} */
-  // @ts-ignore
   const newBtn = backBtn.cloneNode(true);
   backBtn.parentNode.replaceChild(newBtn, backBtn);
-  const newBtnEl = /** @type {HTMLElement} */ (newBtn);
+  const newBtnEl = /** @type {HTMLButtonElement} */ (newBtn);
 
-  if (server.state.self.currentScene === "main") {
-    // Dans la scène principale : bouton rouge pour quitter
-  newBtnEl.style.background = "linear-gradient(135deg, #ff5555 0%, #ff3333 100%)";
-  newBtnEl.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
-  newBtnEl.title = "Quitter la partie";
+  const isGameStarted = server.state.room.started;
+  const isMainScene = server.state.self.currentScene === "main";
 
-    // Gestion des effets hover pour le bouton rouge
-    newBtnEl.onmouseenter = () => {
-      newBtnEl.style.boxShadow = "0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4)";
-    };
-    newBtnEl.onmouseleave = () => {
-      newBtnEl.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
-    };
-  } else {
-    // Dans une énigme : bouton vert pour retour au menu
-    newBtnEl.style.background = "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
-    newBtnEl.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
-    newBtnEl.title = "Retour au menu principal";
-
-    // Gestion des effets hover pour le bouton vert
-    newBtnEl.onmouseenter = () => {
-      newBtnEl.style.boxShadow = "0 4px 0 #2e7d32, 0 6px 12px rgba(0, 0, 0, 0.4)";
-    };
-    newBtnEl.onmouseleave = () => {
-      newBtnEl.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
-    };
-  }
-
-  // Action au clic
-  newBtnEl.onclick = () => {
-    if (server.state.self.currentScene === "main") {
+  if (!isGameStarted || isMainScene) {
+    // Red button to quit
+    newBtnEl.onclick = () => {
       server.leave();
       localStorage.removeItem("playerId");
       window.location.assign("/");
-    } else {
+    };
+    newBtnEl.style.background =
+      "linear-gradient(135deg, #ff5555 0%, #ff3333 100%)";
+    newBtnEl.style.boxShadow = "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtnEl.title = "Quitter la partie";
+    newBtnEl.onmouseenter = () => {
+      newBtnEl.style.boxShadow =
+        "0 4px 0 #cc0000, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    };
+    newBtnEl.onmouseleave = () => {
+      newBtnEl.style.boxShadow =
+        "0 6px 0 #cc0000, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    };
+  } else {
+    // Green button to go back to main scene
+    newBtnEl.onclick = () => {
       server.changeScene("main");
-    }
-  };
+    };
+    newBtnEl.style.background =
+      "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)";
+    newBtnEl.style.boxShadow = "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    newBtnEl.title = "Retour au menu principal";
+    newBtnEl.onmouseenter = () => {
+      newBtnEl.style.boxShadow =
+        "0 4px 0 #2e7d32, 0 6px 12px rgba(0, 0, 0, 0.4)";
+    };
+    newBtnEl.onmouseleave = () => {
+      newBtnEl.style.boxShadow =
+        "0 6px 0 #2e7d32, 0 8px 15px rgba(0, 0, 0, 0.4)";
+    };
+  }
 }
 
 /**

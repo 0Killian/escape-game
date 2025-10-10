@@ -7,6 +7,14 @@ class Enigma2Scene extends Phaser.Scene {
     this.draggedFromSlotIndex = null;
     this.score = 0;
     this.totalPhotos = 5;
+    /** @type {Array<{
+      background: Phaser.GameObjects.Rectangle,
+      text: Phaser.GameObjects.Text,
+      assignedType: string,
+      index: number,
+      zone: Phaser.GameObjects.Zone,
+      innerBorder: Phaser.GameObjects.Rectangle,
+    }>} */
     this.typeSlots = [];
     this.typeButtons = [];
   }
@@ -50,6 +58,7 @@ class Enigma2Scene extends Phaser.Scene {
    * @param {string} scene
    */
   onSceneChanged(_server, scene) {
+    updateBackButton(this.server);
     if (scene !== "enigma2") {
       this.scale.removeAllListeners("resize");
       this.input.removeAllListeners("drop");
@@ -88,12 +97,27 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("photo1", "assets/images/lumieres/scene1filtre1.png");
-    this.load.image("photo2", "assets/images/lumieres/scene1filtre2.png");
-    this.load.image("photo3", "assets/images/lumieres/scene1filtre3.png");
-    this.load.image("photo4", "assets/images/lumieres/scene1filtre4.png");
-    this.load.image("photo5", "assets/images/lumieres/scene1ok.jpg");
-    this.load.image("background", "assets/images/lumieres/lightning-bg.png");
+    this.load.image(
+      "enigma2-photo1",
+      "assets/images/lumieres/scene1filtre1.png",
+    );
+    this.load.image(
+      "enigma2-photo2",
+      "assets/images/lumieres/scene1filtre2.png",
+    );
+    this.load.image(
+      "enigma2-photo3",
+      "assets/images/lumieres/scene1filtre3.png",
+    );
+    this.load.image(
+      "enigma2-photo4",
+      "assets/images/lumieres/scene1filtre4.png",
+    );
+    this.load.image("enigma2-photo5", "assets/images/lumieres/scene1ok.jpg");
+    this.load.image(
+      "enigma2-background",
+      "assets/images/lumieres/lightning-bg.png",
+    );
   }
 
   /**
@@ -111,17 +135,21 @@ class Enigma2Scene extends Phaser.Scene {
       case "enigma2:update":
       case "enigma2:reset":
         // Update UI based on server state
-        this.updateUIFromServerState(room.Enigma2.photos);
+        this.updateUIFromServerState(room.Enigma2);
         break;
 
       case "enigma2:submit-result":
         if ("completed" in event.data && event.data.completed) {
           this.showSuccessModal();
         } else {
-          this.showMessage(
-            "Certaines associations sont incorrectes.",
-            "#ffaa00",
-          );
+          this.showModal({
+            title: "Pas tout à fait !",
+            description:
+              "Certaines associations sont incorrectes. Essayez encore !",
+            emoji: "🤔",
+            success: false,
+            onClose: () => {},
+          });
         }
         break;
 
@@ -133,11 +161,22 @@ class Enigma2Scene extends Phaser.Scene {
 
   /**
    * Updates the UI based on the server state
-   * @param {Array<string>} photos - The photos array from server state
+   * @param {Room["Enigma2"]} enigma2State - The enigma2 state from server state
    */
-  updateUIFromServerState(photos) {
+  updateUIFromServerState(enigma2State) {
+    const photos = enigma2State.photos;
+    // Safety check - ensure typeSlots is initialized
+    if (!this.typeSlots || this.typeSlots.length === 0) {
+      return;
+    }
+
     // Reset all UI elements first
     this.typeSlots.forEach((slot, index) => {
+      // Safety check for slot and its text object
+      if (!slot || !slot.text || !slot.text.active) {
+        return;
+      }
+
       const assignedType = photos[index];
 
       // Update slot (check for non-empty string)
@@ -175,32 +214,51 @@ class Enigma2Scene extends Phaser.Scene {
     });
 
     // Update type buttons based on what's been used (style enigma3)
-    this.typeButtons.forEach((typeButton) => {
-      // Check if this type is used (not empty string)
-      const isUsed = photos.some((p) => p === typeButton.type);
-      typeButton.used = isUsed;
-      if (isUsed) {
-        typeButton.background.setFillStyle(0x1a1a1a, 0.5);
-        typeButton.background.setStrokeStyle(2, 0x666666, 0.5);
-        typeButton.text.setAlpha(0.4);
-        typeButton.text.setColor("#999999");
-        if (typeButton.shadow) typeButton.shadow.setAlpha(0.3);
-        if (typeButton.innerRect) typeButton.innerRect.setAlpha(0.3);
-        if (typeButton.infoBadge) typeButton.infoBadge.setAlpha(0.4);
-        if (typeButton.infoText) typeButton.infoText.setAlpha(0.4);
-      } else {
-        typeButton.background.setFillStyle(0x1a1a1a, 0.9);
-        typeButton.background.setStrokeStyle(3, 0xffd700, 0.8);
-        typeButton.text.setAlpha(1);
-        typeButton.text.setColor("#FFD700");
-        if (typeButton.shadow) typeButton.shadow.setAlpha(0.5);
-        if (typeButton.innerRect) typeButton.innerRect.setAlpha(1);
-        if (typeButton.infoBadge) typeButton.infoBadge.setAlpha(1);
-        if (typeButton.infoText) typeButton.infoText.setAlpha(1);
-      }
-    });
+    if (this.typeButtons && this.typeButtons.length > 0) {
+      this.typeButtons.forEach((typeButton) => {
+        // Safety check for typeButton and its text object
+        if (!typeButton || !typeButton.text || !typeButton.text.active) {
+          return;
+        }
 
-    this.updateScore();
+        // Check if this type is used (not empty string)
+        const isUsed = photos.some((p) => p === typeButton.type);
+        typeButton.used = isUsed;
+        if (isUsed) {
+          typeButton.background.setFillStyle(0x1a1a1a, 0.5);
+          typeButton.background.setStrokeStyle(2, 0x666666, 0.5);
+          typeButton.text.setAlpha(0.4);
+          typeButton.text.setColor("#999999");
+          if (typeButton.shadow) typeButton.shadow.setAlpha(0.3);
+          if (typeButton.innerRect) typeButton.innerRect.setAlpha(0.3);
+          if (typeButton.infoBadge) typeButton.infoBadge.setAlpha(0.4);
+          if (typeButton.infoText) typeButton.infoText.setAlpha(0.4);
+        } else {
+          typeButton.background.setFillStyle(0x1a1a1a, 0.9);
+          typeButton.background.setStrokeStyle(3, 0xffd700, 0.8);
+          typeButton.text.setAlpha(1);
+          typeButton.text.setColor("#FFD700");
+          if (typeButton.shadow) typeButton.shadow.setAlpha(0.5);
+          if (typeButton.innerRect) typeButton.innerRect.setAlpha(1);
+          if (typeButton.infoBadge) typeButton.infoBadge.setAlpha(1);
+          if (typeButton.infoText) typeButton.infoText.setAlpha(1);
+        }
+      });
+    }
+
+    // Update validate button state
+    const isAnySlotFilled = photos.some((p) => p && p !== "");
+    if (this.validateButtonBg && this.validateButtonText) {
+      if (isAnySlotFilled && !enigma2State.completed) {
+        this.validateButtonBg.setInteractive({ useHandCursor: true });
+        this.validateButtonBg.setAlpha(1);
+        this.validateButtonText.setAlpha(1);
+      } else {
+        this.validateButtonBg.disableInteractive();
+        this.validateButtonBg.setAlpha(0.5);
+        this.validateButtonText.setAlpha(0.5);
+      }
+    }
   }
 
   /**
@@ -223,7 +281,7 @@ class Enigma2Scene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     // === Background avec overlay sombre (style enigma3) ===
-    const bg = this.add.image(width / 2, height / 2, "background");
+    const bg = this.add.image(width / 2, height / 2, "enigma2-background");
     bg.setDisplaySize(width, height);
     bg.setAlpha(0.4);
 
@@ -247,54 +305,32 @@ class Enigma2Scene extends Phaser.Scene {
       { key: "photo5", type: "Lumière naturelle" },
     ];
 
-    // === Titre avec effet néon (style enigma3) ===
-    const titleBg = this.add.rectangle(width / 2, 35, 650, 60, 0x000000, 0.8);
-    titleBg.setStrokeStyle(3, 0xffd700, 0.8);
-    titleBg.setDepth(100);
+    // === Header ===
+    const headerY = 40;
 
     const title = this.add
-      .text(width / 2, 30, "L'ÉNIGME DE L'ÉCLAIRAGE", {
-        fontSize: "32px",
-        fontStyle: "bold",
-        color: "#FFD700",
+      .text(width / 2, headerY, "L'ART DE L'ÉCLAIRAGE", {
+        fontSize: "48px",
         fontFamily: "Arial Black",
+        color: "#ffd700",
+        stroke: "#000000",
+        strokeThickness: 6,
       })
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    // Effet de brillance sur le titre
-    this.tweens.add({
-      targets: title,
-      alpha: { from: 0.8, to: 1 },
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+      .setOrigin(0.5);
 
     const subtitle = this.add
       .text(
         width / 2,
-        58,
-        "✨ Glissez les types d'éclairage vers les slots sous chaque photo ✨",
+        headerY + 50,
+        "Associez chaque type d'éclairage à sa photo",
         {
-          fontSize: "14px",
-          color: "#FFF",
-          fontStyle: "italic",
+          fontSize: "24px",
           fontFamily: "Arial",
+          color: "#ffffff",
+          fontStyle: "italic",
         },
       )
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    this.tweens.add({
-      targets: subtitle,
-      alpha: { from: 0.6, to: 1 },
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+      .setOrigin(0.5);
 
     // === Timer en haut à droite (style enigma3) ===
     this.timerText = this.add
@@ -319,11 +355,11 @@ class Enigma2Scene extends Phaser.Scene {
     this.createActionButtons();
 
     // Load initial state from server
-    this.updateUIFromServerState(this.server.state.room.Enigma2.photos);
+    this.updateUIFromServerState(this.server.state.room.Enigma2);
   }
 
   createPhotosWithSlots() {
-    const { width } = this.scale;
+    const { width, height } = this.scale;
     const photoWidth = 250;
     const photoHeight = 200;
     const slotHeight = 45;
@@ -333,18 +369,33 @@ class Enigma2Scene extends Phaser.Scene {
     // Placement des 5 images sur deux lignes
     const cols = 3;
     const startX = width * 0.2; // bloc gauche
-    const startY = 130;
+    let startY = height / 2 - 295;
+    if (startY < 110) {
+      startY = 110;
+    }
 
     this.photoData.forEach((photoData, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
 
-      const x = startX + col * (photoWidth + spacingX);
+      let x;
+      if (row === 1) {
+        if (col === 0) {
+          // Center the first image of the second row in the first gap of the top row
+          x = startX + photoWidth / 2 + spacingX / 2;
+        } else {
+          // col === 1
+          // Center the second image of the second row in the second gap of the top row
+          x = startX + 1.5 * photoWidth + 1.5 * spacingX;
+        }
+      } else {
+        x = startX + col * (photoWidth + spacingX);
+      }
       const y = startY + row * (photoHeight + spacingY);
 
       // Image
       this.add
-        .image(x, y, photoData.key)
+        .image(x, y, "enigma2-" + photoData.key)
         .setDisplaySize(photoWidth, photoHeight)
         .setOrigin(0);
 
@@ -389,7 +440,8 @@ class Enigma2Scene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       // Store original position for drag operations
-      slotText.setOrigin(x + photoWidth / 2, y + photoHeight + 25);
+      slotText.setData("originalX", x + photoWidth / 2);
+      slotText.setData("originalY", y + photoHeight + 25);
       slotText.setData("slotIndex", index);
 
       const slotZone = this.add
@@ -409,8 +461,9 @@ class Enigma2Scene extends Phaser.Scene {
 
     // Gestion du drop avec effets de hover (style enigma3)
     this.input.on("dragenter", (pointer, gameObject, dropZone) => {
-      if (dropZone.slotIndex !== undefined) {
-        const slot = this.typeSlots[dropZone.slotIndex];
+      const slotIndex = dropZone.getData("slotIndex");
+      if (slotIndex !== undefined) {
+        const slot = this.typeSlots[slotIndex];
         if (slot) {
           // Effet jaune sur hover
           slot.background.setStrokeStyle(4, 0xffff00, 1);
@@ -429,8 +482,9 @@ class Enigma2Scene extends Phaser.Scene {
     });
 
     this.input.on("dragleave", (pointer, gameObject, dropZone) => {
-      if (dropZone.slotIndex !== undefined) {
-        const slot = this.typeSlots[dropZone.slotIndex];
+      const slotIndex = dropZone.getData("slotIndex");
+      if (slotIndex !== undefined) {
+        const slot = this.typeSlots[slotIndex];
         if (slot && !slot.assignedType) {
           // Retour au style normal
           slot.background.setStrokeStyle(3, 0x4a90e2, 1);
@@ -449,13 +503,14 @@ class Enigma2Scene extends Phaser.Scene {
     });
 
     this.input.on("drop", (pointer, gameObject, dropZone) => {
+      const slotIndex = dropZone.getData("slotIndex");
       console.log("Drop event fired", {
         isDragging: this.isDragging,
         draggedType: this.draggedType,
-        slotIndex: dropZone.slotIndex,
+        slotIndex: slotIndex,
       });
       if (this.isDragging && this.draggedType != null) {
-        this.assignTypeToSlot(dropZone.slotIndex, this.draggedType);
+        this.assignTypeToSlot(slotIndex, this.draggedType);
 
         // Réinitialiser les flags de dragging après le drop
         this.isDragging = false;
@@ -475,14 +530,11 @@ class Enigma2Scene extends Phaser.Scene {
     // Global drag handlers for slot text elements
     this.input.on("dragstart", (pointer, gameObject) => {
       // Check if this is a slot text being dragged
-      if (gameObject.slotIndex !== undefined) {
-        const slot = this.typeSlots[gameObject.slotIndex];
+      const slotIndex = gameObject.getData("slotIndex");
+      if (slotIndex !== undefined) {
+        const slot = this.typeSlots[slotIndex];
         if (slot && slot.assignedType) {
-          this.startDragFromSlot(
-            slot.assignedType,
-            gameObject.slotIndex,
-            gameObject,
-          );
+          this.startDragFromSlot(slot.assignedType, slotIndex, gameObject);
         }
       }
     });
@@ -739,136 +791,162 @@ class Enigma2Scene extends Phaser.Scene {
 
   createActionButtons() {
     const { width, height } = this.scale;
-    const buttonWidth = 120;
-    const buttonHeight = 45;
+    const buttonWidth = 250;
+    const buttonHeight = 60;
+    const buttonY = height - 60;
+    const spacing = 30;
 
-    // Bouton Reset (style enigma3)
-    const resetShadow = this.add.rectangle(
-      width / 2 - 70 + 3,
-      height - 60 + 3,
-      buttonWidth,
-      buttonHeight,
-      0x000000,
-      0.5,
-    );
+    // Positions
+    const validateButtonX = width / 2 + buttonWidth / 2 + spacing / 2;
+    const resetButtonX = width / 2 - buttonWidth / 2 - spacing / 2;
 
-    const resetButton = this.add
+    // === Bouton Reset (style enigma1, couleur rouge) ===
+    this.resetButton = this.add
       .rectangle(
-        width / 2 - 70,
-        height - 60,
+        resetButtonX,
+        buttonY,
         buttonWidth,
         buttonHeight,
-        0x1a1a1a,
-        0.9,
+        0xcc0000, // Rouge
       )
-      .setStrokeStyle(3, 0xff4444, 0.8)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.resetAssignments());
+      .setStrokeStyle(3, 0x000000) // Bordure noire
+      .setInteractive({ useHandCursor: true });
 
-    const resetInner = this.add.rectangle(
-      width / 2 - 70,
-      height - 60,
-      buttonWidth - 6,
-      buttonHeight - 6,
-      0x000000,
-      0,
-    );
-    resetInner.setStrokeStyle(1, 0xffffff, 0.2);
-
-    const resetText = this.add
-      .text(width / 2 - 70, height - 60, "↻ Reset", {
-        fontSize: "16px",
-        color: "#ff4444",
+    this.resetText = this.add
+      .text(resetButtonX, buttonY, "↻ RESET", {
+        fontSize: "32px",
         fontStyle: "bold",
+        color: "#fff",
         fontFamily: "Arial",
       })
       .setOrigin(0.5);
 
-    // Effets hover bouton Reset
-    resetButton.on("pointerover", () => {
-      resetButton.setStrokeStyle(4, 0xff0000, 1);
-      resetButton.setFillStyle(0xff4444, 0.2);
+    // Animations
+    this.tweens.add({
+      targets: [this.resetButton, this.resetText],
+      scaleY: { from: 1, to: 1.05 },
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    this.resetButton.on("pointerover", () => {
+      this.resetButton.setFillStyle(0xff4444); // Rouge plus clair
+      this.tweens.killTweensOf([this.resetButton, this.resetText]);
       this.tweens.add({
-        targets: [resetButton, resetText, resetInner, resetShadow],
-        scale: 1.05,
+        targets: [this.resetButton, this.resetText],
+        scale: 1.1,
         duration: 200,
-        ease: "Power2",
+        ease: "Back.easeOut",
       });
     });
 
-    resetButton.on("pointerout", () => {
-      resetButton.setStrokeStyle(3, 0xff4444, 0.8);
-      resetButton.setFillStyle(0x1a1a1a, 0.9);
+    this.resetButton.on("pointerout", () => {
+      this.resetButton.setFillStyle(0xcc0000); // Rouge original
+      this.tweens.killTweensOf([this.resetButton, this.resetText]);
       this.tweens.add({
-        targets: [resetButton, resetText, resetInner, resetShadow],
+        targets: [this.resetButton, this.resetText],
         scale: 1,
         duration: 200,
-        ease: "Power2",
+        ease: "Back.easeIn",
       });
     });
 
-    // Bouton Valider (style enigma3)
-    const validateShadow = this.add.rectangle(
-      width / 2 + 70 + 3,
-      height - 60 + 3,
+    this.resetButton.on("pointerdown", () => {
+      this.tweens.killTweensOf([this.resetButton, this.resetText]);
+      this.tweens.add({
+        targets: [this.resetButton, this.resetText],
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: "Power2",
+        onComplete: () => {
+          this.resetAssignments();
+        },
+      });
+    });
+
+    // === Bouton Valider (style enigma1) ===
+    this.validateButtonBg = this.add.rectangle(
+      validateButtonX,
+      buttonY,
       buttonWidth,
       buttonHeight,
-      0x000000,
-      0.5,
+      0x4a90e2,
     );
+    this.validateButtonBg.setStrokeStyle(3, 0x000000);
+    this.validateButtonBg.setDepth(999);
+    this.validateButtonBg.setInteractive({ useHandCursor: true });
 
-    const validateButton = this.add
-      .rectangle(
-        width / 2 + 70,
-        height - 60,
-        buttonWidth,
-        buttonHeight,
-        0x1a1a1a,
-        0.9,
-      )
-      .setStrokeStyle(3, 0x44ff44, 0.8)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.validateAssignments());
-
-    const validateInner = this.add.rectangle(
-      width / 2 + 70,
-      height - 60,
-      buttonWidth - 6,
-      buttonHeight - 6,
-      0x000000,
-      0,
-    );
-    validateInner.setStrokeStyle(1, 0xffffff, 0.2);
-
-    const validateText = this.add
-      .text(width / 2 + 70, height - 60, "✓ Valider", {
-        fontSize: "16px",
-        color: "#44ff44",
+    this.validateButtonText = this.add
+      .text(validateButtonX, buttonY, "✓ VÉRIFIER", {
+        fontSize: "32px",
         fontStyle: "bold",
+        color: "#fff",
         fontFamily: "Arial",
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0.5)
+      .setDepth(1000);
 
-    // Effets hover bouton Valider
-    validateButton.on("pointerover", () => {
-      validateButton.setStrokeStyle(4, 0x00ff88, 1);
-      validateButton.setFillStyle(0x44ff44, 0.2);
+    // Animation permanente
+    this.tweens.add({
+      targets: [this.validateButtonBg, this.validateButtonText],
+      scaleY: { from: 1, to: 1.05 },
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    this.validateButtonBg.on("pointerover", () => {
+      if (!this.validateButtonBg.input.enabled) return;
+      this.validateButtonBg.setFillStyle(0x00ff88);
+      this.tweens.killTweensOf([
+        this.validateButtonBg,
+        this.validateButtonText,
+      ]);
       this.tweens.add({
-        targets: [validateButton, validateText, validateInner, validateShadow],
-        scale: 1.05,
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 1.1,
+        scaleY: 1.1,
         duration: 200,
-        ease: "Power2",
+        ease: "Back.easeOut",
       });
     });
 
-    validateButton.on("pointerout", () => {
-      validateButton.setStrokeStyle(3, 0x44ff44, 0.8);
-      validateButton.setFillStyle(0x1a1a1a, 0.9);
+    this.validateButtonBg.on("pointerout", () => {
+      if (!this.validateButtonBg.input.enabled) return;
+      this.validateButtonBg.setFillStyle(0x4a90e2);
+      this.tweens.killTweensOf([
+        this.validateButtonBg,
+        this.validateButtonText,
+      ]);
       this.tweens.add({
-        targets: [validateButton, validateText, validateInner, validateShadow],
-        scale: 1,
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 1,
+        scaleY: 1,
         duration: 200,
+        ease: "Back.easeIn",
+      });
+    });
+
+    this.validateButtonBg.on("pointerdown", () => {
+      if (!this.validateButtonBg.input.enabled) return;
+      this.tweens.killTweensOf([
+        this.validateButtonBg,
+        this.validateButtonText,
+      ]);
+      this.tweens.add({
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
         ease: "Power2",
+        onComplete: () => {
+          this.validateAssignments();
+        },
       });
     });
 
@@ -951,8 +1029,8 @@ class Enigma2Scene extends Phaser.Scene {
 
   endDragFromSlot(textElement) {
     // Reset position
-    textElement.x = textElement.originalX;
-    textElement.y = textElement.originalY;
+    textElement.x = textElement.getData("originalX");
+    textElement.y = textElement.getData("originalY");
     textElement.setAlpha(1);
 
     // Clear the original slot if drop didn't happen
@@ -978,6 +1056,7 @@ class Enigma2Scene extends Phaser.Scene {
   }
 
   validateAssignments() {
+    if (this.server.state.room.Enigma2.completed) return;
     // Submit to server for validation
     this.server.enigma2.submit();
   }
@@ -995,58 +1074,187 @@ class Enigma2Scene extends Phaser.Scene {
     // Score display removed - keeping function for compatibility
   }
 
-  showMessage(text, color) {
-    const { width } = this.scale;
-    if (this.messageText) this.messageText.destroy();
-    if (this.messageBg) this.messageBg.destroy();
+  showModal({ title, description, emoji, success, onClose }) {
+    const { width, height } = this.cameras.main;
 
-    // Background pour le message (style enigma3)
-    this.messageBg = this.add.rectangle(width / 2, 100, 600, 80, 0x000000, 0.9);
-    this.messageBg.setStrokeStyle(
-      3,
-      color === "#00ff00" ? 0x00ff88 : 0xff4444,
-      1,
+    // Fond sombre semi-transparent qui bloque toutes les interactions
+    const overlay = this.add.rectangle(
+      width / 2,
+      height / 2,
+      width,
+      height,
+      0x000000,
+      0.85,
     );
-    this.messageBg.setDepth(200);
+    overlay.setDepth(1000);
+    overlay.setInteractive();
 
-    this.messageText = this.add
-      .text(width / 2, 100, text, {
-        fontSize: "20px",
-        color: color,
-        align: "center",
-        fontStyle: "bold",
-        fontFamily: "Arial",
+    // Dimensions du panneau
+    const panelWidth = Math.min(700, width * 0.9);
+    const panelHeight = Math.min(400, height * 0.8);
+
+    // Ombre du panneau
+    const panelShadow = this.add.rectangle(
+      width / 2 + 6,
+      height / 2 + 6,
+      panelWidth,
+      panelHeight,
+      0x000000,
+      0.8,
+    );
+    panelShadow.setDepth(1001);
+
+    // Fond du panneau
+    const panelBg = this.add.rectangle(
+      width / 2,
+      height / 2,
+      panelWidth,
+      panelHeight,
+      0x1a1a1a,
+      0.98,
+    );
+    panelBg.setStrokeStyle(5, success ? 0x00ff88 : 0xff4444, 1);
+    panelBg.setDepth(1002);
+
+    // Bordure intérieure dorée
+    const innerBorder = this.add.rectangle(
+      width / 2,
+      height / 2,
+      panelWidth - 10,
+      panelHeight - 10,
+      0x000000,
+      0,
+    );
+    innerBorder.setStrokeStyle(3, 0xffd700, 0.6);
+    innerBorder.setDepth(1003);
+
+    // Icône (emoji)
+    const successIcon = this.add
+      .text(width / 2, height / 2 - panelHeight / 2 + 80, emoji, {
+        fontSize: "80px",
+        color: success ? "#00ff88" : "#ff4444",
+        fontFamily: "Arial Black",
         stroke: "#000000",
-        strokeThickness: 3,
-        wordWrap: { width: 550 },
+        strokeThickness: 6,
       })
       .setOrigin(0.5)
-      .setDepth(201);
+      .setDepth(1004);
 
-    // Animation d'apparition
-    this.tweens.add({
-      targets: [this.messageBg, this.messageText],
-      alpha: { from: 0, to: 1 },
-      scale: { from: 0.8, to: 1 },
-      duration: 300,
-      ease: "Back.easeOut",
+    // Titre
+    const titleText = this.add
+      .text(width / 2, height / 2 - panelHeight / 2 + 160, title, {
+        fontSize: "36px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(1004);
+
+    // Texte de description
+    const descText = this.add
+      .text(width / 2, height / 2 + 20, description, {
+        fontSize: "17px",
+        color: "#FFFFFF",
+        fontFamily: "Arial",
+        align: "center",
+        lineSpacing: 6,
+        wordWrap: { width: panelWidth - 100 },
+      })
+      .setOrigin(0.5)
+      .setDepth(1004);
+
+    // Bouton Fermer
+    const buttonWidth = 200;
+    const buttonHeight = 55;
+    const buttonY = height / 2 + panelHeight / 2 - 70;
+
+    const closeButtonBg = this.add.rectangle(
+      width / 2,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      success ? 0x00ff88 : 0xff4444,
+      1,
+    );
+    closeButtonBg.setStrokeStyle(4, 0xffd700, 1);
+    closeButtonBg.setDepth(1004);
+    closeButtonBg.setInteractive({ useHandCursor: true });
+
+    const closeButtonText = this.add
+      .text(width / 2, buttonY, "Fermer", {
+        fontSize: "22px",
+        color: success ? "#000000" : "#FFFFFF",
+        fontStyle: "bold",
+        fontFamily: "Arial Black",
+      })
+      .setOrigin(0.5)
+      .setDepth(1005);
+
+    // Objets à animer
+    const modalElements = [
+      overlay,
+      panelShadow,
+      panelBg,
+      innerBorder,
+      successIcon,
+      titleText,
+      descText,
+      closeButtonBg,
+      closeButtonText,
+    ];
+
+    // Fermeture de la modale
+    const closeModal = () => {
+      this.tweens.add({
+        targets: modalElements,
+        alpha: 0,
+        scale: 0.8,
+        duration: 300,
+        ease: "Back.easeIn",
+        onComplete: () => {
+          modalElements.forEach((el) => el.destroy());
+          if (onClose) {
+            onClose();
+          }
+        },
+      });
+    };
+
+    closeButtonBg.on("pointerdown", closeModal);
+    overlay.on("pointerdown", closeModal);
+
+    closeButtonBg.on("pointerover", () => {
+      this.tweens.add({
+        targets: [closeButtonBg, closeButtonText],
+        scale: 1.08,
+        duration: 200,
+        ease: "Power2",
+      });
     });
 
-    this.time.delayedCall(3000, () => {
-      if (this.messageText) {
-        this.tweens.add({
-          targets: [this.messageBg, this.messageText],
-          alpha: 0,
-          scale: 0.8,
-          duration: 300,
-          onComplete: () => {
-            if (this.messageText) this.messageText.destroy();
-            if (this.messageBg) this.messageBg.destroy();
-            this.messageText = null;
-            this.messageBg = null;
-          },
-        });
-      }
+    closeButtonBg.on("pointerout", () => {
+      this.tweens.add({
+        targets: [closeButtonBg, closeButtonText],
+        scale: 1,
+        duration: 200,
+        ease: "Power2",
+      });
+    });
+
+    // Animation d'apparition
+    modalElements.forEach((el) => {
+      el.setAlpha(0);
+      el.setScale(0.8);
+    });
+    this.tweens.add({
+      targets: modalElements,
+      alpha: 1,
+      scale: 1,
+      duration: 400,
+      ease: "Back.easeOut",
     });
   }
 
@@ -1307,7 +1515,7 @@ class Enigma2Scene extends Phaser.Scene {
 
     // Dimensions du panneau de succès
     const panelWidth = 700;
-    const panelHeight = 450;
+    const panelHeight = 600;
 
     // Ombre du panneau
     const panelShadow = this.add.rectangle(
@@ -1346,7 +1554,7 @@ class Enigma2Scene extends Phaser.Scene {
 
     // Icône de succès (étoile ou checkmark)
     const successIcon = this.add
-      .text(width / 2, height / 2 - 170, "✓", {
+      .text(width / 2, height / 2 - 220, "✓", {
         fontSize: "80px",
         color: "#00ff88",
         fontStyle: "bold",
@@ -1369,7 +1577,7 @@ class Enigma2Scene extends Phaser.Scene {
 
     // Titre de succès
     const titleText = this.add
-      .text(width / 2, height / 2 - 90, "ÉNIGME RÉSOLUE !", {
+      .text(width / 2, height / 2 - 130, "ÉNIGME RÉSOLUE !", {
         fontSize: "36px",
         fontStyle: "bold",
         color: "#FFD700",
@@ -1394,7 +1602,7 @@ histoires en images.
 Félicitations pour avoir complété cette énigme !`;
 
     const descText = this.add
-      .text(width / 2, height / 2 - 20, educationalText, {
+      .text(width / 2, height / 2 - 70, educationalText, {
         fontSize: "15px",
         color: "#FFFFFF",
         fontFamily: "Arial",
@@ -1402,13 +1610,13 @@ Félicitations pour avoir complété cette énigme !`;
         lineSpacing: 6,
         wordWrap: { width: panelWidth - 100 },
       })
-      .setOrigin(0.5)
+      .setOrigin(0.5, 0)
       .setDepth(404);
 
-    // Bouton Valider l'équipe
+    // Bouton Valider
     const buttonWidth = 280;
     const buttonHeight = 55;
-    const buttonY = height / 2 + 165;
+    const buttonY = height / 2 + 220;
 
     // Ombre du bouton
     const buttonShadow = this.add.rectangle(
@@ -1448,7 +1656,7 @@ Félicitations pour avoir complété cette énigme !`;
 
     // Texte du bouton
     const buttonText = this.add
-      .text(width / 2, buttonY, "✓ Valider l'équipe", {
+      .text(width / 2, buttonY, "Fermer", {
         fontSize: "22px",
         color: "#000000",
         fontStyle: "bold",

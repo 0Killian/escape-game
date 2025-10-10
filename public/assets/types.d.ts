@@ -186,6 +186,9 @@ declare global {
 
     /** Called when another player sends a message */
     onNewMessage?(server: GameServer, message: string): void;
+
+    /** Called when the game ends */
+    onGameOver?(server: GameServer): void;
   }
 
   // Global functions

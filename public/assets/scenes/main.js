@@ -18,6 +18,12 @@ class MainScene extends Phaser.Scene {
       onNewMessage: this.server.listeners.onNewMessage,
     };
 
+    // Check if timer is at zero
+    if (this.server.state.room.timer <= 0) {
+      this.onGameOver(this.server, "Temps écoulé");
+      return; // Stop further execution in init
+    }
+
     // Si le joueur n'est pas sur la scène "main", le rediriger vers sa scène actuelle
     console.log("Current scene:", this.server.state.self.currentScene);
     if (this.server.state.self.currentScene !== "main") {
@@ -53,6 +59,7 @@ class MainScene extends Phaser.Scene {
    * @param {string} scene
    */
   onSceneChanged(_server, scene) {
+    updateBackButton(this.server);
     this.scale.removeAllListeners("resize");
     this.input.removeAllListeners("pointerdown");
     this.scene.start(this.getSceneKey(scene), this.server);
@@ -113,15 +120,15 @@ class MainScene extends Phaser.Scene {
         room.Enigma1.completed &&
         room.Enigma2.completed &&
         room.Enigma3.completed;
-      const doorImgType = allCompleted ? "door-green" : "door-red";
+      const doorImgType = allCompleted ? "main-door-green" : "main-door-red";
       this.exitDoor.img.setTexture(doorImgType);
     }
   }
 
   preload() {
-    this.load.image("hallway", "/assets/images/hallway.png");
-    this.load.image("door-green", "/assets/images/door-green.png");
-    this.load.image("door-red", "/assets/images/door-red.png");
+    this.load.image("main-hallway", "/assets/images/hallway.png");
+    this.load.image("main-door-green", "/assets/images/door-green.png");
+    this.load.image("main-door-red", "/assets/images/door-red.png");
   }
 
   create() {
@@ -135,11 +142,11 @@ class MainScene extends Phaser.Scene {
     );
     bg.setOrigin(0, 0);
 
-    const hallwayWidth = this.textures.get("hallway").get(0).width;
-    const hallwayHeight = this.textures.get("hallway").get(0).height;
+    const hallwayWidth = this.textures.get("main-hallway").get(0).width;
+    const hallwayHeight = this.textures.get("main-hallway").get(0).height;
 
-    const doorWidth = this.textures.get("door-green").get(0).width;
-    const doorHeight = this.textures.get("door-green").get(0).height;
+    const doorWidth = this.textures.get("main-door-green").get(0).width;
+    const doorHeight = this.textures.get("main-door-green").get(0).height;
     const doorAspectRatio = doorWidth / doorHeight;
 
     // Let the hallway fit in the screen, resizing the height or the width depending on the aspect ratio
@@ -148,7 +155,7 @@ class MainScene extends Phaser.Scene {
     let realHallwayHeight = realHallwayWidth * (hallwayHeight / hallwayWidth);
 
     const hallway = this.add
-      .image(0, this.scale.height / 2, "hallway")
+      .image(0, this.scale.height / 2, "main-hallway")
       .setOrigin(0, 0.5)
       .setDisplaySize(
         this.scale.width,
@@ -212,7 +219,7 @@ class MainScene extends Phaser.Scene {
           this.server.state.room.Enigma1.completed &&
           this.server.state.room.Enigma2.completed &&
           this.server.state.room.Enigma3.completed;
-        doorImgType = allCompleted ? "door-green" : "door-red";
+        doorImgType = allCompleted ? "main-door-green" : "main-door-red";
 
         clickHandler = () => {
           // Re-check completion status at click time
@@ -228,8 +235,8 @@ class MainScene extends Phaser.Scene {
       } else {
         // Regular enigma door
         doorImgType = this.server.state.room[door.scene].completed
-          ? "door-green"
-          : "door-red";
+          ? "main-door-green"
+          : "main-door-red";
 
         clickHandler = () => {
           this.server.changeScene(door.key);
@@ -284,12 +291,15 @@ class MainScene extends Phaser.Scene {
     // Timer (en dehors de la boucle)
     this.timerText = this.add
       .text(this.scale.width - 20, 20, "", {
-        fontSize: "24px",
-        color: "#ffffff",
-        backgroundColor: "#000000",
-        padding: { x: 10, y: 5 },
+        fontSize: "32px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 4,
       })
-      .setOrigin(1, 0);
+      .setOrigin(1, 0)
+      .setDepth(102);
 
     // Initialiser le timer avec la valeur actuelle
     if (this.server.state.room) {

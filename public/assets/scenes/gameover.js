@@ -5,8 +5,8 @@ class GameOverScene extends Phaser.Scene {
 
   /**
    * Initialize the scene with the server instance.
-   * @param {GameServer} server - The server instance.
    * @param {Object} data - Additional data
+   * @param {GameServer} data.server - The server instance.
    * @param {string} data.reason - Reason for game over ("timeout" or other)
    */
   init(data) {

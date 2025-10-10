@@ -25,7 +25,7 @@ function createSocket(server) {
 
   server.socket.on("room:new-player", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onJoined) server.listeners.onJoined(server, player);
@@ -33,7 +33,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-disconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onDisconnected)
@@ -42,7 +42,7 @@ function createSocket(server) {
 
   server.socket.on("room:player-left", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     if (server.listeners.onPlayerLeft)
       server.listeners.onPlayerLeft(server, player);
@@ -70,7 +70,7 @@ function createSocket(server) {
 
   server.socket.on("room:reconnected", ({ player }) => {
     server.state.room.players = server.state.room.players.filter(
-      (p) => p.id !== player.id
+      (p) => p.id !== player.id,
     );
     server.state.room.players.push(player);
     if (server.listeners.onReconnected) {
@@ -85,6 +85,7 @@ function createSocket(server) {
   });
 
   server.socket.on("game:scene-changed", ({ scene }) => {
+    server.state.self.currentScene = scene;
     if (server.listeners.onSceneChanged) {
       server.listeners.onSceneChanged(server, scene);
     }
@@ -95,7 +96,9 @@ function createSocket(server) {
     server.state.room = room;
 
     // Mettre à jour aussi les informations du joueur actuel
-    const currentPlayer = room.players.find(p => p.id === server.state.self.id);
+    const currentPlayer = room.players.find(
+      (p) => p.id === server.state.self.id,
+    );
     if (currentPlayer) {
       server.state.self = currentPlayer;
     }
@@ -105,12 +108,11 @@ function createSocket(server) {
     }
   });
 
-  server.socket.on("game:over", ({ room, reason }) => {
-    console.log("Game over:", reason);
+  server.socket.on("game:over", ({ room }) => {
     server.state.room = room;
 
     if (server.listeners.onGameOver) {
-      server.listeners.onGameOver(server, reason);
+      server.listeners.onGameOver(server);
     }
   });
 
@@ -264,21 +266,28 @@ function startGame(server, startScene = "Main") {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [MainScene, Enigma1Scene, Enigma2Scene, Enigma3Scene, Enigma4Scene, GameOverScene],
+    scene: [
+      MainScene,
+      Enigma1Scene,
+      Enigma2Scene,
+      Enigma3Scene,
+      Enigma4Scene,
+      GameOverScene,
+    ],
   };
 
   const game = new Phaser.Game(config);
-  
+
   // Mapper le nom de scène côté serveur vers le nom de scène Phaser
   const sceneMap = {
-    "main": "Main",
-    "enigma1": "Enigma1",
-    "enigma2": "Enigma2",
-    "enigma3": "Enigma3",
-    "enigma4": "Enigma4",
-    "finale": "Finale"
+    main: "Main",
+    enigma1: "Enigma1",
+    enigma2: "Enigma2",
+    enigma3: "Enigma3",
+    enigma4: "Enigma4",
+    finale: "Finale",
   };
-  
+
   const sceneKey = sceneMap[startScene] || startScene;
   game.scene.start(sceneKey, server);
 }

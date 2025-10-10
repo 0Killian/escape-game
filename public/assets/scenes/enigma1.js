@@ -37,9 +37,12 @@ class Enigma1Scene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("background", "assets/images/Montage.png");
+    this.load.image("enigma1-background", "assets/images/Montage.png");
     this.keys.forEach((key) =>
-      this.load.image(key, "assets/images/storyboard/" + key + ".png"),
+      this.load.image(
+        "enigma1-" + key,
+        "assets/images/storyboard/" + key + ".png",
+      ),
     );
   }
 
@@ -59,11 +62,12 @@ class Enigma1Scene extends Phaser.Scene {
    * @param {string} scene - The name of the next scene.
    */
   onSceneChanged(server, scene) {
+    updateBackButton(server);
     this.scale.removeAllListeners("resize");
     this.scale.removeAllListeners("drag");
     this.input.removeAllListeners("dragend");
     this.input.removeAllListeners("pointerdown");
-    this.scene.start(this.getSceneKey(scene));
+    this.scene.start(this.getSceneKey(scene), this.server);
   }
 
   /**
@@ -77,28 +81,37 @@ class Enigma1Scene extends Phaser.Scene {
     // Toujours mettre à jour le timer
     this.updateTimer(room.timer);
 
+    if (room.Enigma1.completed) {
+      if (this.validateButtonBg) {
+        this.validateButtonBg.disableInteractive().setAlpha(0.5);
+        this.validateButtonText.setAlpha(0.5);
+      }
+    }
+
     switch (event.kind) {
       case "enigma1:submit":
         if (room.Enigma1.completed) {
           this.showModal({
             title: "Bravo !",
-            description: "Vous avez compris la continuité narrative. Au cinéma, chaque plan doit s'enchaîner logiquement avec le suivant (règle des 30°, respect de l'axe d'action).",
+            description:
+              "Bravo ! Vous avez reconstitué le scénario. La continuité narrative est essentielle, mais un bon film repose aussi sur un scénario solide, souvent structuré en trois actes. \n\nActe 1 (Exposition) : On découvre Rose, Jack, et le navire. L'incident déclencheur est leur rencontre.\nActe 2 (Confrontation) : Leur amour impossible grandit face aux interdits, jusqu'à la collision avec l'iceberg qui intensifie leur lutte pour survivre.\nActe 3 (Résolution) : Le naufrage culmine avec le sacrifice de Jack, la survie de Rose, et le dénouement de son histoire.\n\nCette structure, rythmée par des moments clés, est ce qui captive le spectateur.",
             emoji: "🎉",
             success: true,
             onClose: () => {
               // Rediriger vers la scène main
               this.server.changeScene("main");
-            }
+            },
           });
         } else {
           this.showModal({
             title: "Pas tout à fait !",
-            description: "Ce n'est pas encore le bon ordre. Observez bien les indices visuels : les raccords dans l'axe, la position des personnages et la lumière du jour.",
+            description:
+              "Ce n'est pas encore le bon ordre. Observez bien les indices visuels : les raccords dans l'axe, la position des personnages et la lumière du jour.",
             emoji: "🤔",
             success: false,
             onClose: () => {
               // Rester sur la scène, permettre de réessayer
-            }
+            },
           });
         }
         break;
@@ -152,7 +165,9 @@ class Enigma1Scene extends Phaser.Scene {
     if (this.timerText) {
       const minutes = Math.floor(seconds / 60);
       const secs = seconds % 60;
-      this.timerText.setText(`⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`);
+      this.timerText.setText(
+        `⏱️ ${minutes}:${secs.toString().padStart(2, "0")}`,
+      );
     }
   }
 
@@ -160,16 +175,20 @@ class Enigma1Scene extends Phaser.Scene {
     const numImages = this.keys.length;
     const screenWidth = this.cameras.main.width;
     const screenHeight = this.cameras.main.height;
-    
+
     // Ajouter l'image de fond
-    const background = this.add.image(screenWidth / 2, screenHeight / 2, "background");
-    
+    const background = this.add.image(
+      screenWidth / 2,
+      screenHeight / 2,
+      "enigma1-background",
+    );
+
     // Ajuster la taille du fond pour couvrir tout l'écran
     const scaleX = screenWidth / background.width;
     const scaleY = screenHeight / background.height;
     const scale = Math.max(scaleX, scaleY);
     background.setScale(scale);
-    
+
     // Overlay semi-transparent pour améliorer la lisibilité
     const overlay = this.add.rectangle(
       0,
@@ -177,61 +196,68 @@ class Enigma1Scene extends Phaser.Scene {
       screenWidth,
       screenHeight,
       0x000000,
-      0.3
+      0.3,
     );
     overlay.setOrigin(0, 0);
-    
-    // Ajouter la description en haut
-    const descriptionText = this.add.text(
-      screenWidth / 2,
-      30,
-      "Comprendre la continuité narrative et le découpage en plans",
-      {
-        fontSize: "22px",
-        fontFamily: "Arial",
-        color: "#FFD700",
-        stroke: "#000",
-        strokeThickness: 3,
-        align: "center"
-      }
-    ).setOrigin(0.5, 0);
-    
+
+    // === Header ===
+    const headerY = 40;
+
+    const title = this.add
+      .text(screenWidth / 2, headerY, "LA CONTINUITÉ NARRATIVE", {
+        fontSize: "48px",
+        fontFamily: "Arial Black",
+        color: "#ffd700",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5);
+
+    const subtitle = this.add
+      .text(
+        screenWidth / 2,
+        headerY + 50,
+        "Replacez les plans dans le bon ordre",
+        {
+          fontSize: "24px",
+          fontFamily: "Arial",
+          color: "#ffffff",
+          fontStyle: "italic",
+        },
+      )
+      .setOrigin(0.5);
+
     // Calculer la taille des images en fonction de l'écran
     let imageWidth = 250;
     let imageHeight = 150;
     const spacingX = 20;
     const spacingY = 50; // Augmenter l'espacement vertical pour que les numéros soient visibles
-    
+
     // Déterminer le nombre de colonnes et rangées
-    let columns = numImages;
-    let rows = 1;
-    
-    // Si les images en ligne dépassent 90% de la largeur, passer en 2 rangées
-    const totalWidthOneLine = numImages * imageWidth + (numImages - 1) * spacingX;
-    if (totalWidthOneLine > screenWidth * 0.9) {
-      columns = 3; // 3 colonnes par rangée
-      rows = 2; // 2 rangées
-      
-      // Recalculer la taille des images pour qu'elles tiennent
-      const maxWidthPerImage = (screenWidth * 0.9 - (columns - 1) * spacingX) / columns;
-      if (maxWidthPerImage < imageWidth) {
-        imageWidth = maxWidthPerImage;
-        imageHeight = imageWidth * 0.6; // Garder le ratio
-      }
-    }
-    
+    let columns = 3; // 3 colonnes par rangée
+    let rows = 2; // 2 rangées
+
+    // Recalculer la taille des images pour qu'elles tiennent
+    const maxWidthPerImage =
+      (screenWidth * 0.9 - (columns - 1) * spacingX) / columns;
+    imageWidth = maxWidthPerImage;
+    imageHeight = imageWidth * 0.6; // Garder le ratio
+
     // Calculer les positions de départ pour centrer la grille
     const totalWidth = columns * imageWidth + (columns - 1) * spacingX;
     const totalHeight = rows * imageHeight + (rows - 1) * spacingY;
-    const descriptionHeight = 80; // Espace pour la description
+    const descriptionHeight = 150; // Espace pour la description
     const startX = (screenWidth - totalWidth) / 2 + imageWidth / 2;
-    
+
     // Centrer verticalement : si une seule ligne, utiliser le centre de l'écran
     let startY;
     if (rows === 1) {
       // Centrer verticalement en tenant compte de la description et du bouton
       const availableHeight = screenHeight - descriptionHeight - 120; // 120 pour le bouton en bas
-      startY = descriptionHeight + (availableHeight - imageHeight) / 2 + imageHeight / 2;
+      startY =
+        descriptionHeight +
+        (availableHeight - imageHeight) / 2 +
+        imageHeight / 2;
     } else {
       // Position fixe plus haute pour 2 rangées
       startY = descriptionHeight + 30 + imageHeight / 2;
@@ -241,7 +267,7 @@ class Enigma1Scene extends Phaser.Scene {
     for (let i = 0; i < numImages; i++) {
       const col = i % columns;
       const row = Math.floor(i / columns);
-      
+
       const x = startX + col * (imageWidth + spacingX);
       const y = startY + row * (imageHeight + spacingY);
 
@@ -270,12 +296,15 @@ class Enigma1Scene extends Phaser.Scene {
     // Timer en haut à droite
     this.timerText = this.add
       .text(screenWidth - 20, 20, "", {
-        fontSize: "24px",
-        color: "#ffffff",
-        backgroundColor: "#000000",
-        padding: { x: 10, y: 5 },
+        fontSize: "32px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 4,
       })
-      .setOrigin(1, 0);
+      .setOrigin(1, 0)
+      .setDepth(102);
 
     // Initialiser le timer avec la valeur actuelle
     if (this.server.state.room) {
@@ -305,7 +334,7 @@ class Enigma1Scene extends Phaser.Scene {
       }
 
       let img = this.add
-        .image(xScreen, yScreen, storyboard.name)
+        .image(xScreen, yScreen, "enigma1-" + storyboard.name)
         .setInteractive();
 
       img.setDisplaySize(imageWidth, imageHeight);
@@ -317,6 +346,16 @@ class Enigma1Scene extends Phaser.Scene {
     });
 
     // Drag & Drop
+    this.input.on(
+      "dragstart",
+      (
+        /** @type Phaser.Input.Pointer */ _pointer,
+        /** @type Phaser.GameObjects.Image */ gameObject,
+      ) => {
+        gameObject.setDepth(1);
+      },
+    );
+
     this.input.on(
       "drag",
       (
@@ -346,17 +385,19 @@ class Enigma1Scene extends Phaser.Scene {
         /** @type Phaser.Input.Pointer */ _pointer,
         /** @type Phaser.GameObjects.Image */ draggedImg,
       ) => {
+        draggedImg.setDepth(0);
+
         // Trouver le slot le plus proche en utilisant la distance euclidienne
         let closestSlotIndex = this.slots
           .map((_, index) => index)
           .reduce((prev, curr) => {
             const distPrev = Math.sqrt(
               Math.pow(this.slots[prev].x - draggedImg.x, 2) +
-              Math.pow(this.slots[prev].y - draggedImg.y, 2)
+                Math.pow(this.slots[prev].y - draggedImg.y, 2),
             );
             const distCurr = Math.sqrt(
               Math.pow(this.slots[curr].x - draggedImg.x, 2) +
-              Math.pow(this.slots[curr].y - draggedImg.y, 2)
+                Math.pow(this.slots[curr].y - draggedImg.y, 2),
             );
             return distCurr < distPrev ? curr : prev;
           });
@@ -396,26 +437,85 @@ class Enigma1Scene extends Phaser.Scene {
     });
 
     // Bouton Vérifier
-    const yButton = screenHeight - 60;
-    this.add
-      .text(screenWidth / 2, yButton, "✓ VÉRIFIER", {
+    const buttonY = screenHeight - 60;
+    const buttonWidth = 250;
+    const buttonHeight = 60;
+
+    this.validateButtonBg = this.add.rectangle(
+      screenWidth / 2,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      0x4a90e2
+    );
+    this.validateButtonBg.setStrokeStyle(3, 0x000000);
+    this.validateButtonBg.setDepth(999);
+    this.validateButtonBg.setInteractive({ useHandCursor: true });
+
+    this.validateButtonText = this.add
+      .text(screenWidth / 2, buttonY, "✓ VÉRIFIER", {
         fontSize: "32px",
         fontStyle: "bold",
-        backgroundColor: "#4a90e2",
         color: "#fff",
-        padding: { left: 20, right: 20, top: 15, bottom: 15 },
-        stroke: "#000",
-        strokeThickness: 3,
+        fontFamily: "Arial",
       })
       .setOrigin(0.5, 0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerover", function() {
-        this.setStyle({ backgroundColor: "#00ff88" });
-      })
-      .on("pointerout", function() {
-        this.setStyle({ backgroundColor: "#4a90e2" });
-      })
-      .on("pointerdown", () => this.server.enigma1.submit());
+      .setDepth(1000);
+
+    // Animation permanente du bouton
+    this.tweens.add({
+      targets: [this.validateButtonBg, this.validateButtonText],
+      scaleY: { from: 1, to: 1.05 },
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    this.validateButtonBg.on("pointerover", () => {
+      this.validateButtonBg.setFillStyle(0x00ff88);
+      this.tweens.killTweensOf([this.validateButtonBg, this.validateButtonText]);
+      this.tweens.add({
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 1.1,
+        scaleY: 1.1,
+        duration: 200,
+        ease: "Back.easeOut",
+      });
+    });
+
+    this.validateButtonBg.on("pointerout", () => {
+      this.validateButtonBg.setFillStyle(0x4a90e2);
+      this.tweens.killTweensOf([this.validateButtonBg, this.validateButtonText]);
+      this.tweens.add({
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: "Back.easeIn",
+      });
+    });
+
+    this.validateButtonBg.on("pointerdown", () => {
+      if (this.server.state.room.Enigma1.completed) return;
+      this.tweens.killTweensOf([this.validateButtonBg, this.validateButtonText]);
+      this.tweens.add({
+        targets: [this.validateButtonBg, this.validateButtonText],
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: "Power2",
+        onComplete: () => {
+          this.server.enigma1.submit();
+        },
+      });
+    });
+
+    if (this.server.state.room.Enigma1.completed) {
+      this.validateButtonBg.disableInteractive().setAlpha(0.5);
+      this.validateButtonText.setAlpha(0.5);
+    }
 
     // Setup listeners at the end, after all images are created
     this.server.listeners.onGameUpdate = this.onGameUpdate.bind(this);
@@ -473,123 +573,186 @@ class Enigma1Scene extends Phaser.Scene {
    * @param {Function} [options.onClose] - Callback optionnel lors de la fermeture
    */
   showModal({ title, description, emoji, success, onClose }) {
-    const screenWidth = this.cameras.main.width;
-    const screenHeight = this.cameras.main.height;
+    const { width, height } = this.cameras.main;
 
-    // Overlay semi-transparent
+    // Fond sombre semi-transparent qui bloque toutes les interactions
     const overlay = this.add.rectangle(
-      0,
-      0,
-      screenWidth,
-      screenHeight,
+      width / 2,
+      height / 2,
+      width,
+      height,
       0x000000,
-      0.7
+      0.85,
     );
-    overlay.setOrigin(0, 0);
     overlay.setDepth(1000);
     overlay.setInteractive();
 
-    // Container de la modale
-    const modalWidth = Math.min(600, screenWidth * 0.9);
-    const modalHeight = Math.min(400, screenHeight * 0.8);
-    const modalX = screenWidth / 2;
-    const modalY = screenHeight / 2;
+    // Dimensions du panneau
+    const panelWidth = Math.min(700, width * 0.9);
+    const panelHeight = Math.min(650, height * 0.8);
 
-    // Fond de la modale
-    const modalBg = this.add.rectangle(
-      modalX,
-      modalY,
-      modalWidth,
-      modalHeight,
-      success ? 0x2d5016 : 0x8b4513
+    // Ombre du panneau
+    const panelShadow = this.add.rectangle(
+      width / 2 + 6,
+      height / 2 + 6,
+      panelWidth,
+      panelHeight,
+      0x000000,
+      0.8,
     );
-    modalBg.setStrokeStyle(4, success ? 0x4CAF50 : 0xff9900);
-    modalBg.setDepth(1001);
+    panelShadow.setDepth(1001);
 
-    // Emoji en haut
-    const emojiText = this.add.text(modalX, modalY - modalHeight / 2 + 60, emoji, {
-      fontSize: "64px",
-      align: "center"
-    });
-    emojiText.setOrigin(0.5, 0.5);
-    emojiText.setDepth(1002);
+    // Fond du panneau
+    const panelBg = this.add.rectangle(
+      width / 2,
+      height / 2,
+      panelWidth,
+      panelHeight,
+      0x1a1a1a,
+      0.98,
+    );
+    panelBg.setStrokeStyle(5, success ? 0x00ff88 : 0xff4444, 1);
+    panelBg.setDepth(1002);
+
+    // Bordure intérieure dorée
+    const innerBorder = this.add.rectangle(
+      width / 2,
+      height / 2,
+      panelWidth - 10,
+      panelHeight - 10,
+      0x000000,
+      0,
+    );
+    innerBorder.setStrokeStyle(3, 0xffd700, 0.6);
+    innerBorder.setDepth(1003);
+
+    // Icône (emoji)
+    const successIcon = this.add
+      .text(width / 2, height / 2 - panelHeight / 2 + 80, emoji, {
+        fontSize: "80px",
+        color: success ? "#00ff88" : "#ff4444",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(1004);
 
     // Titre
-    const titleText = this.add.text(modalX, modalY - modalHeight / 2 + 130, title, {
-      fontSize: "32px",
-      fontStyle: "bold",
-      color: success ? "#4CAF50" : "#ffcc00",
-      align: "center",
-      wordWrap: { width: modalWidth - 60 }
-    });
-    titleText.setOrigin(0.5, 0.5);
-    titleText.setDepth(1002);
+    const titleText = this.add
+      .text(width / 2, height / 2 - panelHeight / 2 + 160, title, {
+        fontSize: "36px",
+        fontStyle: "bold",
+        color: "#FFD700",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(1004);
 
-    // Description
-    const descText = this.add.text(modalX, modalY - 20, description, {
-      fontSize: "18px",
-      color: "#ffffff",
-      align: "center",
-      wordWrap: { width: modalWidth - 80 }
-    });
-    descText.setOrigin(0.5, 0.5);
-    descText.setDepth(1002);
+    // Texte de description
+    const descText = this.add
+      .text(width / 2, height / 2 + 20, description, {
+        fontSize: "17px",
+        color: "#FFFFFF",
+        fontFamily: "Arial",
+        align: "center",
+        lineSpacing: 6,
+        wordWrap: { width: panelWidth - 100 },
+      })
+      .setOrigin(0.5)
+      .setDepth(1004);
 
     // Bouton Fermer
-    const buttonY = modalY + modalHeight / 2 - 60;
     const buttonWidth = 200;
-    const buttonHeight = 50;
+    const buttonHeight = 55;
+    const buttonY = height / 2 + panelHeight / 2 - 70;
 
-    const closeButton = this.add.rectangle(
-      modalX,
+    const closeButtonBg = this.add.rectangle(
+      width / 2,
       buttonY,
       buttonWidth,
       buttonHeight,
-      success ? 0x4CAF50 : 0xff9900
+      success ? 0x00ff88 : 0xff4444,
+      1,
     );
-    closeButton.setStrokeStyle(3, 0xffffff);
-    closeButton.setDepth(1002);
-    closeButton.setInteractive({ useHandCursor: true });
+    closeButtonBg.setStrokeStyle(4, 0xffd700, 1);
+    closeButtonBg.setDepth(1004);
+    closeButtonBg.setInteractive({ useHandCursor: true });
 
-    const closeButtonText = this.add.text(modalX, buttonY, "FERMER", {
-      fontSize: "24px",
-      fontStyle: "bold",
-      color: "#ffffff"
-    });
-    closeButtonText.setOrigin(0.5, 0.5);
-    closeButtonText.setDepth(1003);
+    const closeButtonText = this.add
+      .text(width / 2, buttonY, "Fermer", {
+        fontSize: "22px",
+        color: success ? "#000000" : "#FFFFFF",
+        fontStyle: "bold",
+        fontFamily: "Arial Black",
+      })
+      .setOrigin(0.5)
+      .setDepth(1005);
 
-    // Effet hover sur le bouton
-    closeButton.on("pointerover", () => {
-      closeButton.setFillStyle(success ? 0x45a049 : 0xff8800);
-      closeButton.setScale(1.05);
-      closeButtonText.setScale(1.05);
-    });
-
-    closeButton.on("pointerout", () => {
-      closeButton.setFillStyle(success ? 0x4CAF50 : 0xff9900);
-      closeButton.setScale(1);
-      closeButtonText.setScale(1);
-    });
+    // Objets à animer
+    const modalElements = [
+      overlay,
+      panelShadow,
+      panelBg,
+      innerBorder,
+      successIcon,
+      titleText,
+      descText,
+      closeButtonBg,
+      closeButtonText,
+    ];
 
     // Fermeture de la modale
     const closeModal = () => {
-      overlay.destroy();
-      modalBg.destroy();
-      emojiText.destroy();
-      titleText.destroy();
-      descText.destroy();
-      closeButton.destroy();
-      closeButtonText.destroy();
-
-      if (onClose) {
-        onClose();
-      }
+      this.tweens.add({
+        targets: modalElements,
+        alpha: 0,
+        scale: 0.8,
+        duration: 300,
+        ease: "Back.easeIn",
+        onComplete: () => {
+          modalElements.forEach((el) => el.destroy());
+          if (onClose) {
+            onClose();
+          }
+        },
+      });
     };
 
-    closeButton.on("pointerdown", closeModal);
-
-    // Permettre de fermer en cliquant sur l'overlay (facultatif)
+    closeButtonBg.on("pointerdown", closeModal);
     overlay.on("pointerdown", closeModal);
+
+    closeButtonBg.on("pointerover", () => {
+      this.tweens.add({
+        targets: [closeButtonBg, closeButtonText],
+        scale: 1.08,
+        duration: 200,
+        ease: "Power2",
+      });
+    });
+
+    closeButtonBg.on("pointerout", () => {
+      this.tweens.add({
+        targets: [closeButtonBg, closeButtonText],
+        scale: 1,
+        duration: 200,
+        ease: "Power2",
+      });
+    });
+
+    // Animation d'apparition
+    modalElements.forEach((el) => {
+      el.setAlpha(0);
+      el.setScale(0.8);
+    });
+    this.tweens.add({
+      targets: modalElements,
+      alpha: 1,
+      scale: 1,
+      duration: 400,
+      ease: "Back.easeOut",
+    });
   }
 }

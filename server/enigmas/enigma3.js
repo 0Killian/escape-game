@@ -62,16 +62,25 @@ export default {
         },
       });
 
-  // Solution correcte selon les archétypes narratifs du Titanic
-  // Index 0: Héros -> Jack (jack)
-  // Index 1: Mentor -> Molly Brown (molly)
-  // Index 2: Antagoniste -> Caledon Hockley (caledon)
-  // Index 3: Allié -> Fabrizio (fabrizio)
-  // Index 4: Héroïne -> Rose (rose)
-  // Index 5: Sbire -> Spicer Lovejoy (lovejoy)
-      const correctSolution = ["jack", "molly", "caledon", "fabrizio", "rose", "lovejoy"];
-      
-      const isCorrect = room.Enigma3.roles.every((role, index) => role === correctSolution[index]);
+      // Solution correcte selon les archétypes narratifs du Titanic
+      // Index 0: Héros -> Jack (jack)
+      // Index 1: Mentor -> Molly Brown (molly)
+      // Index 2: Antagoniste -> Caledon Hockley (caledon)
+      // Index 3: Allié -> Fabrizio (fabrizio)
+      // Index 4: Héroïne -> Rose (rose)
+      // Index 5: Sbire -> Spicer Lovejoy (lovejoy)
+      const correctSolution = [
+        "jack",
+        "molly",
+        "caledon",
+        "fabrizio",
+        "rose",
+        "lovejoy",
+      ];
+
+      const isCorrect = room.Enigma3.roles.every(
+        (role, index) => role === correctSolution[index],
+      );
 
       if (isCorrect) {
         room = await prisma.room.update({
@@ -91,13 +100,19 @@ export default {
             Enigma4: true,
           },
         });
-        
+
         logger.info(`Enigma 3 completed in room ${room.code}`);
       } else {
         logger.info(`Enigma 3 failed in room ${room.code}`);
       }
 
-      io.to(room.code).emit("game:update", { room });
+      io.to(room.code).emit("game:update", {
+        room,
+        event: {
+          kind: "enigma3:submit-result",
+          data: { completed: room.Enigma3.completed },
+        },
+      });
     });
   },
 };
